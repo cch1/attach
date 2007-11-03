@@ -2,8 +2,11 @@ module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
     @@default_processors = %w(ImageScience Rmagick MiniMagick)
     @@tempfile_path      = File.join(RAILS_ROOT, 'tmp', 'attachment_fu')
-    @@content_types      = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png', 'image/jpg']
-    mattr_reader :content_types, :tempfile_path, :default_processors
+    @@image_content_types = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png', 'image/jpg', 'image/bmp']
+    @@icon_content_types = ['application/xls']
+    @@content_types = @@image_content_types + @@icon_content_types
+    mattr_reader :content_types, :image_content_types, :icon_content_types
+    mattr_reader :tempfile_path, :default_processors
     mattr_writer :tempfile_path
 
     class ThumbnailError < StandardError;  end
@@ -29,25 +32,25 @@ module Technoweenie # :nodoc:
       #   has_attachment :content_type => ['application/pdf', 'application/msword', 'text/plain']
       #   has_attachment :content_type => :image, :resize_to => [50,50]
       #   has_attachment :content_type => ['application/pdf', :image], :resize_to => 'x50'
-      #   has_attachment :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
+      #   has_attachment :thumbs => { :thumbnail => [50, 50] }
       #   has_attachment :storage => :file_system, :path_prefix => 'public/files'
       #   has_attachment :storage => :file_system, :path_prefix => 'public/files', 
       #     :content_type => :image, :resize_to => [50,50]
       #   has_attachment :storage => :file_system, :path_prefix => 'public/files',
-      #     :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
+      #     :thumbs => { :thumbnail => [50, 50], :geometry => 'x50' }
       #   has_attachment :storage => :s3
       def has_attachment(options = {})
         # this allows you to redefine the acts' options for each subclass, however
         options[:min_size]         ||= 1
         options[:max_size]         ||= 1.megabyte
         options[:size]             ||= (options[:min_size]..options[:max_size])
-        options[:thumbnails]       ||= {}
+        options[:thumbs]           ||= {}
         options[:thumbnail_class]  ||= self
         options[:s3_access]        ||= :public_read
-        options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Technoweenie::AttachmentFu.content_types : t }.flatten unless options[:content_type].nil?
+        options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Technoweenie::AttachmentFu.image_content_types : t }.flatten unless options[:content_type].nil?
         
-        unless options[:thumbnails].is_a?(Hash)
-          raise ArgumentError, ":thumbnails option should be a hash: e.g. :thumbnails => { :foo => '50x50' }"
+        unless options[:thumbs].is_a?(Hash)
+          raise ArgumentError, ":thumbs option should be a hash: e.g. :thumbs => { :foo => '50x50' }"
         end
         
         # doing these shenanigans so that #attachment_options is available to processors and backends
@@ -71,6 +74,7 @@ module Technoweenie # :nodoc:
           end
           before_destroy :destroy_thumbnails
 
+          before_validation :download
           before_validation :set_size_from_temp_path
           after_save :after_process_attachment
           after_destroy :destroy_file
@@ -101,16 +105,19 @@ module Technoweenie # :nodoc:
 
     module ClassMethods
       delegate :content_types, :to => Technoweenie::AttachmentFu
+      delegate :image_content_types, :to => Technoweenie::AttachmentFu
+      delegate :icon_content_types, :to => Technoweenie::AttachmentFu
 
       # Performs common validations for attachment models.
       def validates_as_attachment
-        validates_presence_of :size, :content_type, :filename
-        validate              :attachment_attributes_valid?
+        validates_presence_of :content_type
+        validates_presence_of :size, :digest, :filename, :if => :local?
+#        validate              :attachment_attributes_valid?
       end
 
       # Returns true or false if the given content type is recognized as an image.
       def image?(content_type)
-        content_types.include?(content_type)
+        image_content_types.include?(content_type)
       end
 
       # Callback after an image has been resized.
@@ -185,6 +192,13 @@ module Technoweenie # :nodoc:
       def thumbnailable?
         image? && respond_to?(:parent_id) && parent_id.nil?
       end
+      
+      # Returns boolean predicated on the attachment having been been stored locally 
+      # (in other words, not a URL-referenced attachment)
+      def local?
+        !temp_data.nil?
+#        temp_paths.empty?
+      end
 
       # Returns the class used to create new thumbnails for this attachment.
       def thumbnail_class
@@ -202,15 +216,10 @@ module Technoweenie # :nodoc:
       end
 
       # Creates or updates the thumbnail for the current attachment.
-      def create_or_update_thumbnail(temp_file, file_name_suffix, *size)
-        thumbnailable? || raise(ThumbnailError.new("Can't create a thumbnail if the content type is not an image or there is no parent_id column"))
-        returning find_or_initialize_thumbnail(file_name_suffix) do |thumb|
-          thumb.attributes = {
-            :content_type             => content_type, 
-            :filename                 => thumbnail_name_for(file_name_suffix), 
-            :temp_path                => temp_file,
-            :thumbnail_resize_options => size
-          }
+      def create_or_update_thumbnail(ttype, attrs)
+        raise(ThumbnailError.new("Can't create a thumbnail of a thumbnail")) unless parent_id.nil?
+        returning find_or_initialize_thumbnail(ttype) do |thumb|
+          thumb.attributes = attrs.merge!({:thumbs => {}})
           callback_with_args :before_thumbnail_saved, thumb
           thumb.save!
         end
@@ -237,7 +246,7 @@ module Technoweenie # :nodoc:
       end
 
       # nil placeholder in case this field is used in a form.
-      def uploaded_data() nil; end
+      def file() nil; end
 
       # This method handles the uploaded file object.  If you set the field name to uploaded_data, you don't need
       # any special code in your controller.
@@ -250,10 +259,11 @@ module Technoweenie # :nodoc:
       #   @attachment = Attachment.create! params[:attachment]
       #
       # TODO: Allow it to work with Merb tempfiles too.
-      def uploaded_data=(file_data)
+      def file=(file_data)
         return nil if file_data.nil? || file_data.size == 0 
         self.content_type = file_data.content_type
         self.filename     = file_data.original_filename if respond_to?(:filename)
+        self.size         = file_data.size
         if file_data.is_a?(StringIO)
           file_data.rewind
           self.temp_data = file_data.read
@@ -336,7 +346,8 @@ module Technoweenie # :nodoc:
 
         # before_validation callback.
         def set_size_from_temp_path
-          self.size = File.size(temp_path) if save_attachment?
+          self.size = File.size(temp_path) if save_attachment? && (self.size == 0 || self.size.nil?)
+          self.digest = Digest::MD5.digest(temp_data) if local?
         end
 
         # validates the size and content_type attributes according to the current model's options
@@ -361,11 +372,31 @@ module Technoweenie # :nodoc:
 
         # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
         def after_process_attachment
+          thumbs.each do |ttype, tsource|
+            unless tsource.nil?
+              case tsource
+                when Array
+                  if @saved_attachment && respond_to?(:process_attachment_with_processing)
+                    toptions = {
+                        :content_type             => content_type, 
+                        :filename                 => thumbnail_name_for(ttype), 
+                        :temp_path                => temp_path || create_temp_file,
+                        :thumbnail_resize_options => tsource
+                    }
+                  end
+                when String
+                  toptions = {:url => tsource}
+                else
+                  if tsource.respond_to?(:original_filename)
+                    toptions = {:file => tsource}
+                  else
+                    raise RuntimeError, "Don't know how to make this #{ttype}: #{tsource}."
+                  end
+              end # case   
+              create_or_update_thumbnail(ttype, toptions)
+            end # unless
+          end # each
           if @saved_attachment
-            if respond_to?(:process_attachment_with_processing) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
-              temp_file = temp_path || create_temp_file
-              attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
-            end
             save_to_storage
             @temp_paths.clear
             @saved_attachment = nil
