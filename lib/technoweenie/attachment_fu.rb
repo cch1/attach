@@ -60,6 +60,7 @@ module Technoweenie # :nodoc:
         # only need to define these once on a class
         unless included_modules.include?(InstanceMethods)
           attr_accessor :thumbnail_resize_options
+          attr_writer :thumbs
 
           attachment_options[:storage]     ||= (attachment_options[:file_system_path] || attachment_options[:path_prefix]) ? :file_system : :db_file
           attachment_options[:path_prefix] ||= attachment_options[:file_system_path]
@@ -110,6 +111,7 @@ module Technoweenie # :nodoc:
 
       # Performs common validations for attachment models.
       def validates_as_attachment
+        validate :valid_source?
         validates_presence_of :content_type
         validates_presence_of :size, :digest, :filename, :if => :local?
 #        validate              :attachment_attributes_valid?
@@ -327,6 +329,73 @@ module Technoweenie # :nodoc:
         self.class.with_image(temp_path, &block)
       end
 
+      # Evaluate if a download is required and select the right HTTP method.
+      def download
+        begin
+          download!(self[:url], http_method_required, 5) if self[:url]
+        rescue => e
+          errors.add(:url, e.message)
+          false
+        end
+      end
+      
+      # Download from URL
+      def download!(url = self.url, method = :head, count = 5)
+        uri = URI.parse(url)
+        Net::HTTP.start(uri.host) do |http|
+          response = http.send(method, uri.path)
+          case response
+            when Net::HTTPSuccess
+              self.content_type = response.content_type
+              self.size = response.content_length
+              self.digest = response['Content-MD5']
+              unless response.body.nil? or response.body.size.zero? or content_type == 'text/html'
+                self.temp_data = response.body
+                self.size = response.body.size
+                self.digest = Digest::MD5.digest(response.body)
+                self.filename = uri.path.split('/')[-1]
+                raise "Computed digest does not match reported digest" if (response['Content-MD5'] && (self.digest != response['Content-MD5']))
+              end
+            when Net::HTTPRedirection
+              raise ArgumentError, "URL results in too many redirections." if count.zero?
+              return download!(response['location'], method, count-1)
+            else
+              raise ArgumentError, "Couldn't open URL"
+            end
+        end
+      end
+  
+      # Returns the HTTP method required (GET or HEAD) based on the thumbnail options.
+      def http_method_required
+        thumbs.each do |ttype, toption|
+          return :get if toption.is_a?(Array)
+        end
+        :head
+      end
+      
+      # Returns a hash of rules for how to build various thumbnails.  Defaults from the has_attachment method
+      # can be overridden in the constructor options with the :thumbs psuedo-attribute.
+      def thumbs
+        @thumbs ||= (attachment_options[:thumbs] || {})
+      end
+      
+      def mime_type
+        @mime_type ||= Mime::Type.lookup(self.attributes['content_type'])
+      end
+      
+      def mime_type=(mt)
+        @mime_type = mt.kind_of?(Mime::Type) ? mt : Mime::Type.lookup(mt)
+        write_attribute(:content_type, @mime_type.to_s)
+        @mime_type
+      end
+    
+      # Validate that one or the other of the attachment sources is present.
+      def valid_source?
+        returning (self.temp_path || self[:url]) do |present|
+          self.errors.add_to_base('Attachment must have exactly one source.') unless present
+        end
+      end
+  
       protected
         # Generates a unique filename for a Tempfile. 
         def random_tempfile_filename
