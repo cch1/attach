@@ -76,7 +76,6 @@ module Technoweenie # :nodoc:
           before_destroy :destroy_thumbnails
 
           before_validation :download
-          before_validation :set_size_from_temp_path
           after_save :after_process_attachment
           after_destroy :destroy_file
           extend  ClassMethods
@@ -99,7 +98,8 @@ module Technoweenie # :nodoc:
                 puts "Problems loading #{options[:processor]}Processor: #{$!}"
               end
           end
-          after_validation :process_attachment
+          before_save :process_attachment
+          before_save :calculate_summary_metrics
         end
       end
     end
@@ -258,7 +258,6 @@ module Technoweenie # :nodoc:
         return nil if file_data.nil? || file_data.size == 0 
         self.content_type = file_data.content_type
         self.filename     = file_data.original_filename if respond_to?(:filename)
-        self.size         = file_data.size
         if file_data.is_a?(StringIO)
           file_data.rewind
           self.temp_data = file_data.read
@@ -340,14 +339,12 @@ module Technoweenie # :nodoc:
           case response
             when Net::HTTPSuccess
               self.content_type = response.content_type
-              self.size = response.content_length
-              self.digest = response['Content-MD5']
-              unless response.body.nil? or response.body.size.zero? or content_type == 'text/html'
+              if response.body.nil? or response.body.size.zero? or content_type == 'text/html'
+                self.size = response.content_length
+                self.digest = response['Content-MD5']
+              else
                 self.temp_data = response.body
-                self.size = response.body.size
-                self.digest = Digest::MD5.digest(response.body)
                 self.filename = uri.path.split('/')[-1]
-                raise "Computed digest does not match reported digest" if (response['Content-MD5'] && (self.digest != response['Content-MD5']))
               end
             when Net::HTTPRedirection
               raise ArgumentError, "URL results in too many redirections." if count.zero?
@@ -406,12 +403,6 @@ module Technoweenie # :nodoc:
           end
         end
 
-        # before_validation callback.
-        def set_size_from_temp_path
-          self.size = File.size(temp_path) if save_attachment? && (self.size == 0 || self.size.nil?)
-          self.digest = Digest::MD5.digest(temp_data) if save_attachment?
-        end
-
         # validates the size and content_type attributes according to the current model's options
         def attachment_attributes_valid?
           [:size, :content_type].each do |attr_name|
@@ -432,6 +423,13 @@ module Technoweenie # :nodoc:
           @saved_attachment = save_attachment?
         end
 
+        def calculate_summary_metrics
+          if save_attachment?
+            self.size   = File.size(temp_path)
+            self.digest = Digest::MD5.digest(temp_data)
+          end
+        end
+        
         # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
         def after_process_attachment
           thumbs.each do |ttype, tsource|
