@@ -358,7 +358,7 @@ module Technoweenie # :nodoc:
       # Returns the HTTP method required (GET or HEAD) based on the thumbnail options.
       def http_method_required
         thumbs.each do |ttype, toption|
-          return :get if toption.is_a?(Array)
+          return :get if [Array, Geometry].include?(toption.class)
         end
         :head
       end
@@ -435,7 +435,7 @@ module Technoweenie # :nodoc:
           thumbs.each do |ttype, tsource|
             unless tsource.nil?
               case tsource
-                when Array
+                when Array, Geometry
                   if @saved_attachment && respond_to?(:process_attachment_with_processing)
                     toptions = {
                         :content_type             => content_type, 
