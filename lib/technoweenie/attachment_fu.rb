@@ -291,7 +291,7 @@ module Technoweenie # :nodoc:
 
       # Gets the data from the latest temp file.  This will read the file into memory.
       def temp_data
-        save_attachment? ? File.read(temp_path) : nil
+        save_attachment? ? File.open(temp_path, "rb").read : nil
       end
       
       # Writes the given data to a Tempfile and adds it to the collection of temp files.

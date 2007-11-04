@@ -94,7 +94,7 @@ module Technoweenie # :nodoc:
           end
           
           def current_data
-            File.file?(full_filename) ? File.read(full_filename) : nil
+            File.file?(full_filename) ? File.open(full_filename, "r+b").read : nil
           end
       end
     end
