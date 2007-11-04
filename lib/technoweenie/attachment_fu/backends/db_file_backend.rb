@@ -4,7 +4,7 @@ module Technoweenie # :nodoc:
       # Methods for DB backed attachments
       module DbFileBackend
         def self.included(base) #:nodoc:
-          Object.const_set(:DbFile, Class.new(ActiveRecord::Base)) unless Object.const_defined?(:DbFile)
+#          Object.const_set(:DbFile, Class.new(ActiveRecord::Base)) unless Object.const_defined?(:DbFile)
           base.belongs_to  :db_file, :class_name => '::DbFile', :foreign_key => 'db_file_id'
         end
 
@@ -25,6 +25,11 @@ module Technoweenie # :nodoc:
         # Gets the current data from the database
         def current_data
           db_file.data
+        end
+
+        # Returns true if the attachment is stored locally.
+        def local?
+          !db_file.nil?
         end
         
         protected

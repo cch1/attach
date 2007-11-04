@@ -195,13 +195,6 @@ module Technoweenie # :nodoc:
         image? && respond_to?(:parent_id) && parent_id.nil?
       end
       
-      # Returns boolean predicated on the attachment having been been stored locally 
-      # (in other words, not a URL-referenced attachment)
-      def local?
-        !temp_data.nil?
-#        temp_paths.empty?
-      end
-
       # Returns the class used to create new thumbnails for this attachment.
       def thumbnail_class
         self.class.thumbnail_class
@@ -280,7 +273,7 @@ module Technoweenie # :nodoc:
       # it's not needed anymore.  The collection is cleared after saving the attachment.
       def temp_path
         p = temp_paths.first
-        p.respond_to?(:path) ? p.path : p.to_s
+        p.respond_to?(:path) ? p.path : p.to_s if p
       end
       
       # Gets an array of the currently used temp paths.  Defaults to a copy of #full_filename.
@@ -391,7 +384,7 @@ module Technoweenie # :nodoc:
     
       # Validate that one or the other of the attachment sources is present.
       def valid_source?
-        returning (self.temp_path || self[:url]) do |present|
+        returning (save_attachment? || self.local? || self[:url]) do |present|
           self.errors.add_to_base('Attachment must have exactly one source.') unless present
         end
       end
@@ -416,7 +409,7 @@ module Technoweenie # :nodoc:
         # before_validation callback.
         def set_size_from_temp_path
           self.size = File.size(temp_path) if save_attachment? && (self.size == 0 || self.size.nil?)
-          self.digest = Digest::MD5.digest(temp_data) if local?
+          self.digest = Digest::MD5.digest(temp_data) if save_attachment?
         end
 
         # validates the size and content_type attributes according to the current model's options
@@ -461,8 +454,10 @@ module Technoweenie # :nodoc:
                   else
                     raise RuntimeError, "Don't know how to make this #{ttype}: #{tsource}."
                   end
-              end # case   
-              create_or_update_thumbnail(ttype, toptions)
+              end # case
+              # Create a thumbnail based on the processing rules -if any (reference-only URLs 
+              # won't even get default thumbnail processing)
+              create_or_update_thumbnail(ttype, toptions) if toptions
             end # unless
           end # each
           if @saved_attachment

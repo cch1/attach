@@ -53,6 +53,11 @@ module Technoweenie # :nodoc:
           copy_to_temp_file full_filename
         end
 
+        # Returns true if the attachment is stored locally.
+        def local?
+          filename && File.exist?(full_filename)
+        end
+
         protected
           # Destroys the file.  Called in the after_destroy callback
           def destroy_file
