@@ -1,11 +1,19 @@
+class DbFile < ActiveRecord::Base
+  belongs_to :attachment
+
+  # Summarize blob data
+  def inspect
+    self.attributes(:except => :data).merge({:data => (self.data.nil? ? nil : "#{self.data.size/1024}K blob")}).inspect
+  end
+end
+
 module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
     module Backends
       # Methods for DB backed attachments
       module DbFileBackend
         def self.included(base) #:nodoc:
-#          Object.const_set(:DbFile, Class.new(ActiveRecord::Base)) unless Object.const_defined?(:DbFile)
-          base.belongs_to  :db_file, :class_name => '::DbFile', :foreign_key => 'db_file_id'
+          base.has_one :db_file, :class_name => '::DbFile', :foreign_key => 'attachment_id', :dependent => :destroy
         end
 
         # This method is intended to return the filename of the attachment.  For the db_file backend, it is only 
@@ -35,7 +43,7 @@ module Technoweenie # :nodoc:
         protected
           # Destroys the file.  Called in the after_destroy callback
           def destroy_file
-            db_file.destroy if db_file
+            # All the hard work is done by Rails with the :dependent => :destroy association option.
           end
           
           # Saves the data to the DbFile model
@@ -43,7 +51,6 @@ module Technoweenie # :nodoc:
             if save_attachment?
               (db_file || build_db_file).data = temp_data
               db_file.save!
-              self.class.update_all ['db_file_id = ?', self.db_file_id = db_file.id], ["#{self.class.primary_key} = ?", id]
             end
             true
           end
