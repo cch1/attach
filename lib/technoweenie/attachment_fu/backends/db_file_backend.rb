@@ -28,7 +28,7 @@ module Technoweenie # :nodoc:
         end
 
         # Returns true if the attachment is stored locally.
-        def local?
+        def attachment_present?
           !db_file.nil?
         end
         

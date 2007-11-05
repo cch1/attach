@@ -50,7 +50,7 @@ module Technoweenie # :nodoc:
         options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Technoweenie::AttachmentFu.image_content_types : t }.flatten unless options[:content_type].nil?
         
         unless options[:thumbs].is_a?(Hash)
-          raise ArgumentError, ":thumbs option should be a hash: e.g. :thumbs => { :foo => '50x50' }"
+          raise ArgumentError, ":thumbs option should be a hash: e.g. :thumbs => { :foo => [150,150] }"
         end
         
         # doing these shenanigans so that #attachment_options is available to processors and backends
@@ -111,17 +111,18 @@ module Technoweenie # :nodoc:
 
       # Performs common validations for attachment models.
       def validates_as_attachment
-        validate :valid_source?
-        validates_presence_of :content_type
-        validates_presence_of :size, :digest, :filename, :if => :local?
-#        validate              :attachment_attributes_valid?
+        validate                :valid_source?
+        validates_presence_of   :content_type
+        validate                :valid_content_type?
+        validates_presence_of   :filename, :if => :local?
+        validates_inclusion_of  :size, :in => attachment_options[:size], :if => Proc.new{|r| r.local? && r.thumbnail.nil?}
       end
 
       # Returns true or false if the given content type is recognized as an image.
       def image?(content_type)
         image_content_types.include?(content_type)
       end
-
+      
       # Callback after an image has been resized.
       #
       #   class Foo < ActiveRecord::Base
@@ -190,11 +191,17 @@ module Technoweenie # :nodoc:
         self.class.image?(content_type)
       end
       
-      # Returns true/false if an attachment is thumbnailable.  A thumbnailable attachment has an image content type and the parent_id attribute.
+      # Returns true/false if an attachment is thumbnailable.  A thumbnailable attachment has an 
+      # image content type and a parent_id attribute, and uses local storage.
       def thumbnailable?
-        image? && respond_to?(:parent_id) && parent_id.nil?
+        image? && respond_to?(:parent_id) && parent_id.nil? && local?
       end
       
+      # Returns predicate based on attachment being expected to be stored locally or already stored locally
+      def local?
+        save_attachment? || attachment_present?
+      end
+
       # Returns the class used to create new thumbnails for this attachment.
       def thumbnail_class
         self.class.thumbnail_class
@@ -258,6 +265,7 @@ module Technoweenie # :nodoc:
         return nil if file_data.nil? || file_data.size == 0 
         self.content_type = file_data.content_type
         self.filename     = file_data.original_filename if respond_to?(:filename)
+        self.size         = file_data.size
         if file_data.is_a?(StringIO)
           file_data.rewind
           self.temp_data = file_data.read
@@ -343,6 +351,7 @@ module Technoweenie # :nodoc:
                 self.size = response.content_length
                 self.digest = response['Content-MD5']
               else
+                self.size = response.body.size
                 self.temp_data = response.body
                 self.filename = uri.path.split('/')[-1]
               end
@@ -381,7 +390,7 @@ module Technoweenie # :nodoc:
     
       # Validate that one or the other of the attachment sources is present.
       def valid_source?
-        returning (save_attachment? || self.local? || self[:url]) do |present|
+        returning (self.local? || self[:url]) do |present|
           self.errors.add_to_base('Attachment must have exactly one source.') unless present
         end
       end
@@ -403,12 +412,10 @@ module Technoweenie # :nodoc:
           end
         end
 
-        # validates the size and content_type attributes according to the current model's options
-        def attachment_attributes_valid?
-          [:size, :content_type].each do |attr_name|
-            enum = attachment_options[attr_name]
-            errors.add attr_name, ActiveRecord::Errors.default_error_messages[:inclusion] unless enum.nil? || enum.include?(send(attr_name))
-          end
+        # validates the content_type attribute according to the current model's options
+        def valid_content_type?
+          whitelist = attachment_options[:content_type]
+          errors.add :content_type, ActiveRecord::Errors.default_error_messages[:inclusion] unless whitelist.nil? || whitelist.include?(self.content_type)
         end
 
         # Initializes a new thumbnail with the given suffix.

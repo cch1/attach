@@ -54,7 +54,7 @@ module Technoweenie # :nodoc:
         end
 
         # Returns true if the attachment is stored locally.
-        def local?
+        def attachment_present?
           filename && File.exist?(full_filename)
         end
 
