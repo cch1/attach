@@ -13,7 +13,7 @@ module Technoweenie # :nodoc:
       # Methods for DB backed attachments
       module DbFileBackend
         def self.included(base) #:nodoc:
-          base.has_one :db_file, :class_name => '::DbFile', :foreign_key => 'attachment_id', :dependent => :destroy
+          base.has_one :db_file, :foreign_key => 'attachment_id', :dependent => :destroy
         end
 
         # This method is intended to return the filename of the attachment.  For the db_file backend, it is only 
