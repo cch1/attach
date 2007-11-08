@@ -2,10 +2,11 @@ module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
     @@default_processors = %w(ImageScience Rmagick MiniMagick)
     @@tempfile_path      = File.join(RAILS_ROOT, 'tmp', 'attachment_fu')
-    @@image_content_types = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png', 'image/jpg', 'image/bmp']
-    @@icon_content_types = ['application/xls']
-    @@content_types = @@image_content_types + @@icon_content_types
-    mattr_reader :content_types, :image_content_types, :icon_content_types
+    @@thumb_content_types = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png', 'image/jpg', 'image/bmp']
+    @@program_content_types = ['text/html']
+    @@icon_content_types = @@program_content_types + ['application/xls']
+    @@content_types = @@thumb_content_types + @@icon_content_types
+    mattr_reader :content_types, :thumb_content_types, :icon_content_types, :program_content_types
     mattr_reader :tempfile_path, :default_processors
     mattr_writer :tempfile_path
 
@@ -47,7 +48,7 @@ module Technoweenie # :nodoc:
         options[:thumbs]           ||= {}
         options[:thumbnail_class]  ||= self
         options[:s3_access]        ||= :public_read
-        options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Technoweenie::AttachmentFu.image_content_types : t }.flatten unless options[:content_type].nil?
+        options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Technoweenie::AttachmentFu.thumb_content_types : t }.flatten unless options[:content_type].nil?
         
         unless options[:thumbs].is_a?(Hash)
           raise ArgumentError, ":thumbs option should be a hash: e.g. :thumbs => { :foo => [150,150] }"
@@ -106,8 +107,9 @@ module Technoweenie # :nodoc:
 
     module ClassMethods
       delegate :content_types, :to => Technoweenie::AttachmentFu
-      delegate :image_content_types, :to => Technoweenie::AttachmentFu
+      delegate :thumb_content_types, :to => Technoweenie::AttachmentFu
       delegate :icon_content_types, :to => Technoweenie::AttachmentFu
+      delegate :program_content_types, :to => Technoweenie::AttachmentFu
 
       # Performs common validations for attachment models.
       def validates_as_attachment
@@ -120,7 +122,7 @@ module Technoweenie # :nodoc:
 
       # Returns true or false if the given content type is recognized as an image.
       def image?(content_type)
-        image_content_types.include?(content_type)
+        thumb_content_types.include?(content_type)
       end
       
       # Callback after an image has been resized.
@@ -339,7 +341,10 @@ module Technoweenie # :nodoc:
         end
       end
       
-      # Download from URL
+      # Download from URL.  Attachment metadata is loaded from the header only if method is :head.  If the method
+      # is :get, the body is returned and used to calculate the metadata.  Only if the metadata is already present
+      # is it possible to pass an invalid URL -this can accomodate timing differences between creating the Attachment
+      # and uploading it to a separate hosting service.
       def download!(url = self.url, method = :head, count = 5)
         uri = URI.parse(url)
         Net::HTTP.start(uri.host) do |http|
@@ -347,7 +352,7 @@ module Technoweenie # :nodoc:
           case response
             when Net::HTTPSuccess
               self.content_type = response.content_type
-              if response.body.nil? or response.body.size.zero? or content_type == 'text/html'
+              if response.body.nil? or response.body.size.zero? or self.class.program_content_types.include?(content_type)
                 self.size = response.content_length
                 self.digest = response['Content-MD5']
               else
@@ -359,7 +364,7 @@ module Technoweenie # :nodoc:
               raise ArgumentError, "URL results in too many redirections." if count.zero?
               return download!(response['location'], method, count-1)
             else
-              raise ArgumentError, "Couldn't open URL"
+              raise ArgumentError, "Couldn't open URL" unless (self.size && self.content_type)
             end
         end
       end
