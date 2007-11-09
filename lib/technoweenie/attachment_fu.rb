@@ -331,10 +331,11 @@ module Technoweenie # :nodoc:
         self.class.with_image(temp_path, &block)
       end
 
-      # Evaluate if a download is required and select the right HTTP method.
+      # Evaluate if a download is required and select the right HTTP method.  Don't bother downloading 
+      # if we've been given the metadata directly.  And don't download if there is no URL, of course.
       def download
         begin
-          download!(self[:url], http_method_required, 5) if self[:url]
+          download!(self[:url], http_method_required, 5) if self[:url] and not (self.size and self.content_type)
         rescue => e
           errors.add(:url, e.message)
           false
@@ -342,9 +343,7 @@ module Technoweenie # :nodoc:
       end
       
       # Download from URL.  Attachment metadata is loaded from the header only if method is :head.  If the method
-      # is :get, the body is returned and used to calculate the metadata.  Only if the metadata is already present
-      # is it possible to pass an invalid URL -this can accomodate timing differences between creating the Attachment
-      # and uploading it to a separate hosting service.
+      # is :get, the body is returned and used to calculate the metadata.
       def download!(url = self.url, method = :head, count = 5)
         uri = URI.parse(url)
         Net::HTTP.start(uri.host) do |http|
@@ -364,7 +363,7 @@ module Technoweenie # :nodoc:
               raise ArgumentError, "URL results in too many redirections." if count.zero?
               return download!(response['location'], method, count-1)
             else
-              raise ArgumentError, "Couldn't open URL" unless (self.size && self.content_type)
+              raise ArgumentError, "Couldn't open URL"
             end
         end
       end
@@ -448,6 +447,7 @@ module Technoweenie # :nodoc:
             unless tsource.nil?
               case tsource
                 when Array, Geometry
+                  # Don't bother trying to create a thumbnail if no data was saved (particularly when a URL cannot be retrieved)
                   if @saved_attachment && respond_to?(:process_attachment_with_processing)
                     toptions = {
                         :content_type             => content_type, 
@@ -458,6 +458,8 @@ module Technoweenie # :nodoc:
                   end
                 when String
                   toptions = {:url => tsource}
+                when Hash
+                  toptions = tsource
                 else
                   if tsource.respond_to?(:original_filename)
                     toptions = {:file => tsource}
