@@ -201,7 +201,7 @@ module Technoweenie # :nodoc:
       
       # Returns predicate based on attachment being expected to be stored locally or already stored locally
       def local?
-        save_attachment? || attachment_present?
+        new_record? ? save_attachment? : attachment_present?
       end
 
       # Returns the class used to create new thumbnails for this attachment.
@@ -252,11 +252,11 @@ module Technoweenie # :nodoc:
       # nil placeholder in case this field is used in a form.
       def file() nil; end
 
-      # This method handles the uploaded file object.  If you set the field name to uploaded_data, you don't need
+      # This method handles the uploaded file object.  If you set the field name to file, you don't need
       # any special code in your controller.
       #
       #   <% form_for :attachment, :html => { :multipart => true } do |f| -%>
-      #     <p><%= f.file_field :uploaded_data %></p>
+      #     <p><%= f.file_field :file %></p>
       #     <p><%= submit_tag :Save %>
       #   <% end -%>
       #
@@ -285,9 +285,9 @@ module Technoweenie # :nodoc:
         p.respond_to?(:path) ? p.path : p.to_s if p
       end
       
-      # Gets an array of the currently used temp paths.  Defaults to a copy of #full_filename.
+      # Gets an array of the currently used temp paths.  Upon initialization, a temp_file of the current data is created.
       def temp_paths
-        @temp_paths ||= (new_record? || !File.exist?(full_filename)) ? [] : [copy_to_temp_file(full_filename)]
+        @temp_paths ||= (new_record? ? [] : [create_temp_file])
       end
       
       # Adds a new temp_path to the array.  This should take a string or a Tempfile.  This class makes no 
