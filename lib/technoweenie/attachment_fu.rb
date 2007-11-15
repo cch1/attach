@@ -170,6 +170,7 @@ module Technoweenie # :nodoc:
       end
 
       # Copies the given file path to a new tempfile, returning the closed tempfile.
+      # NB: Under Win32 on Ruby 1.8.6, tempfiles are not usually deleted due to silent failures in the unlink method.
       def copy_to_temp_file(file, temp_base_name)
         returning Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
           tmp.close
@@ -178,6 +179,7 @@ module Technoweenie # :nodoc:
       end
       
       # Writes the given data to a new tempfile, returning the closed tempfile.
+      # NB: Under Win32 on Ruby 1.8.6, tempfiles are not usually deleted due to silent failures in the unlink method.
       def write_to_temp_file(data, temp_base_name)
         returning Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
           tmp.binmode
