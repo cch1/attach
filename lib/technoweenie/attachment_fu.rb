@@ -330,6 +330,7 @@ module Technoweenie # :nodoc:
       #   end
       #
       def with_image(&block)
+        raise "Local processing not currently supported with with remote images." unless attachment_present?
         self.class.with_image(temp_path, &block)
       end
 
