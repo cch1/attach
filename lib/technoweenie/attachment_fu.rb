@@ -281,7 +281,7 @@ module Technoweenie # :nodoc:
       # Gets the latest temp path from the collection of temp paths.  While working with an attachment,
       # multiple Tempfile objects may be created for various processing purposes (resizing, for example).
       # An array of all the tempfile objects is stored so that the Tempfile instance is held on to until
-      # it's not needed anymore.  The collection is cleared after saving the attachment.
+      # it's not needed anymore.
       def temp_path
         p = temp_paths.first
         p.respond_to?(:path) ? p.path : p.to_s if p
@@ -477,7 +477,6 @@ module Technoweenie # :nodoc:
           end # each
           if @saved_attachment
             save_to_storage
-            @temp_paths.clear
             @saved_attachment = nil
             callback :after_attachment_saved
           end
