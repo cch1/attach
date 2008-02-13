@@ -33,7 +33,7 @@ module Technoweenie # :nodoc:
             self.width  = img.columns if respond_to?(:width)
             self.height = img.rows    if respond_to?(:height)
             img.strip! if self.thumbnail?
-            callback_with_args :after_resize, img
+            callback :after_resize
           end if image?
         end
       

@@ -34,7 +34,7 @@ module Technoweenie # :nodoc:
               self.width  = img.width  if respond_to?(:width)
               self.height = img.height if respond_to?(:height)
               img.save temp_path
-              callback_with_args :after_resize, img
+              callback :after_resize
             end
 
             size = size.first if size.is_a?(Array) && size.length == 1

@@ -101,6 +101,7 @@ module Technoweenie # :nodoc:
           end
           before_save :process_attachment
           before_save :calculate_summary_metrics
+          before_save :evaluate_custom_callbacks
         end
       end
     end
@@ -125,43 +126,6 @@ module Technoweenie # :nodoc:
         thumb_content_types.include?(content_type)
       end
       
-      # Callback after an image has been resized.
-      #
-      #   class Foo < ActiveRecord::Base
-      #     acts_as_attachment
-      #     after_resize do |record, img| 
-      #       record.aspect_ratio = img.columns.to_f / img.rows.to_f
-      #     end
-      #   end
-      def after_resize(&block)
-        write_inheritable_array(:after_resize, [block])
-      end
-
-      # Callback after an attachment has been saved either to the file system or the DB.
-      # Only called if the file has been changed, not necessarily if the record is updated.
-      #
-      #   class Foo < ActiveRecord::Base
-      #     acts_as_attachment
-      #     after_attachment_saved do |record|
-      #       ...
-      #     end
-      #   end
-      def after_attachment_saved(&block)
-        write_inheritable_array(:after_attachment_saved, [block])
-      end
-
-      # Callback before a thumbnail is saved.  Use this to pass any necessary extra attributes that may be required.
-      #
-      #   class Foo < ActiveRecord::Base
-      #     acts_as_attachment
-      #     before_thumbnail_saved do |record, thumbnail|
-      #       ...
-      #     end
-      #   end
-      def before_thumbnail_saved(&block)
-        write_inheritable_array(:before_thumbnail_saved, [block])
-      end
-
       # Get the thumbnail class, which is the current attachment class by default.
       # Configure this with the :thumbnail_class option.
       def thumbnail_class
@@ -190,6 +154,19 @@ module Technoweenie # :nodoc:
     end
 
     module InstanceMethods
+      def self.included( base )
+        base.define_callbacks *[:after_resize, :after_attachment_saved, :before_save_attachment, :before_save_thumbnail, :before_thumbnail_saved]
+      end  
+  
+      # Trigger appropriate custom callbacks.
+      def evaluate_custom_callbacks
+        if thumbnail?
+          callback(:before_save_thumbnail)
+        else
+          callback(:before_save_attachment)
+        end
+      end
+      
       # Checks whether the attachment's content type is an image content type
       def image?
         self.class.image?(content_type)
@@ -226,7 +203,7 @@ module Technoweenie # :nodoc:
         raise(ThumbnailError.new("Can't create a thumbnail of a thumbnail")) unless parent_id.nil?
         returning find_or_initialize_thumbnail(ttype) do |thumb|
           thumb.attributes = attrs.merge!({:thumbs => {}})
-          callback_with_args :before_thumbnail_saved, thumb
+          callback :before_thumbnail_saved
           thumb.save!
         end
       end
@@ -428,7 +405,7 @@ module Technoweenie # :nodoc:
         # Initializes a new thumbnail with the given suffix.
         def find_or_initialize_thumbnail(file_name_suffix)
           respond_to?(:parent_id) ?
-            thumbnail_class.find_or_initialize_by_thumbnail_and_parent_id(file_name_suffix.to_s, id) :
+            thumbnails.find_or_initialize_by_thumbnail(file_name_suffix.to_s) :
             thumbnail_class.find_or_initialize_by_thumbnail(file_name_suffix.to_s)
         end
 
@@ -491,20 +468,6 @@ module Technoweenie # :nodoc:
           end
         end
 
-        # Yanked from ActiveRecord::Callbacks, modified so I can pass args to the callbacks besides self.
-        # Only accept blocks, however
-        def callback_with_args(method, arg = self)
-          notify(method)
-
-          result = nil
-          callbacks_for(method).each do |callback|
-            result = callback.call(self, arg)
-            return false if result == false
-          end
-
-          return result
-        end
-        
         # Removes the thumbnails for the attachment, if it has any
         def destroy_thumbnails
           self.thumbnails.each { |thumbnail| thumbnail.destroy } if thumbnailable?
