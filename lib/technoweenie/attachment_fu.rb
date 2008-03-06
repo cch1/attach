@@ -333,7 +333,7 @@ module Technoweenie # :nodoc:
               self.content_type = response.content_type
               if response.body.nil? or response.body.size.zero? or self.class.program_content_types.include?(content_type)
                 self.size = response.content_length
-                self.digest = ActiveSupport::Base64.decode64(response['Content-MD5'])
+                self.digest = ActiveSupport::Base64.decode64(response['Content-MD5']) unless response['Content-MD5'].nil? 
               else
                 self.size = response.body.size
                 self.temp_data = response.body
