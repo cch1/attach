@@ -182,6 +182,10 @@ module Technoweenie # :nodoc:
       def local?
         new_record? ? save_attachment? : attachment_present?
       end
+      
+      def remote?
+        !self[:url].nil?
+      end
 
       # Returns the class used to create new thumbnails for this attachment.
       def thumbnail_class
