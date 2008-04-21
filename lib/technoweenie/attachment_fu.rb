@@ -19,8 +19,8 @@ module Technoweenie # :nodoc:
       # *  <tt>:min_size</tt> - Minimum size allowed.  1 byte is the default.
       # *  <tt>:max_size</tt> - Maximum size allowed.  1.megabyte is the default.
       # *  <tt>:size</tt> - Range of sizes allowed.  (1..1.megabyte) is the default.  This overrides the :min_size and :max_size options.
-      # *  <tt>:resize_to</tt> - Used by RMagick to resize images.  Pass either an array of width/height, or a geometry string.
-      # *  <tt>:thumbnails</tt> - Specifies a set of thumbnails to generate.  This accepts a hash of filename suffixes and RMagick resizing options.
+      # *  <tt>:resize</tt> - Used by RMagick to resize images.  Pass either an array of width/height, or a geometry string.
+      # *  <tt>:thumbnails</tt> - Specifies a set of thumbnails to generate.  This accepts a hash of thumb types (key) and resizing options or sources.
       # *  <tt>:thumbnail_class</tt> - Set what class to use for thumbnails.  This attachment class is used by default.
       # *  <tt>:path_prefix</tt> - path to store the uploaded files.  Uses public/#{table_name} by default for the filesystem, and just #{table_name}
       #      for the S3 backend.  Setting this sets the :storage to :file_system.
@@ -60,7 +60,9 @@ module Technoweenie # :nodoc:
 
         # only need to define these once on a class
         unless included_modules.include?(InstanceMethods)
-          attr_accessor :thumbnail_resize_options
+          attr_accessor :resize
+          attr_accessor :store  # indicates whether remote attachments should be downloaded and stored locally
+          attr_reader :source # holds data source for new instances
           attr_writer :thumbs
 
           attachment_options[:storage]     ||= (attachment_options[:file_system_path] || attachment_options[:path_prefix]) ? :file_system : :db_file
@@ -76,8 +78,10 @@ module Technoweenie # :nodoc:
           end
           before_destroy :destroy_thumbnails
 
-          before_validation :download
-          after_save :after_process_attachment
+          before_validation :process_attachment
+          before_save :evaluate_custom_callbacks
+          after_save :process_thumbnails
+          after_save :save_attachment
           after_destroy :destroy_file
           extend  ClassMethods
           include InstanceMethods
@@ -99,9 +103,6 @@ module Technoweenie # :nodoc:
                 puts "Problems loading #{options[:processor]}Processor: #{$!}"
               end
           end
-          before_save :process_attachment
-          before_save :calculate_summary_metrics
-          before_save :evaluate_custom_callbacks
         end
       end
     end
@@ -114,10 +115,9 @@ module Technoweenie # :nodoc:
 
       # Performs common validations for attachment models.
       def validates_as_attachment
-        validate                :valid_source?
         validates_presence_of   :content_type
         validate                :valid_content_type?
-        validates_presence_of   :filename, :if => :local?
+        validates_presence_of   :filename
         validates_inclusion_of  :size, :in => attachment_options[:size], :if => Proc.new{|r| r.local? && r.thumbnail.nil?}
       end
 
@@ -135,6 +135,8 @@ module Technoweenie # :nodoc:
 
       # Copies the given file path to a new tempfile, returning the closed tempfile.
       # NB: Under Win32 on Ruby 1.8.6, tempfiles are not usually deleted due to silent failures in the unlink method.
+      # NB: This method looks bogus.  The Tempfile.new method returns a file with the necessary properties.  Copying an existing file onto the name
+      #     previously held by a tempfile does not make the copy a Tempfile. 
       def copy_to_temp_file(file, temp_base_name)
         returning Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
           tmp.close
@@ -172,34 +174,14 @@ module Technoweenie # :nodoc:
         self.class.image?(content_type)
       end
       
-      # Returns true/false if an attachment is thumbnailable.  A thumbnailable attachment has an 
-      # image content type and a parent_id attribute, and uses local storage.
-      def thumbnailable?
-        image? && respond_to?(:parent_id) && parent_id.nil? && local?
-      end
-      
       # Returns predicate based on attachment being expected to be stored locally or already stored locally
       def local?
-        new_record? ? save_attachment? : attachment_present?
+        new_record? ? store : attachment_present?
       end
       
-      def remote?
-        !self[:url].nil?
-      end
-
       # Returns the class used to create new thumbnails for this attachment.
       def thumbnail_class
         self.class.thumbnail_class
-      end
-
-      # Gets the thumbnail name for a filename.  'foo.jpg' becomes 'foo_thumbnail.jpg'
-      def thumbnail_name_for(thumbnail = nil)
-        return filename if thumbnail.blank?
-        ext = nil
-        basename = filename.gsub /\.\w+$/ do |s|
-          ext = s; ''
-        end
-        "#{basename}_#{thumbnail}#{ext}"
       end
 
       # Creates or updates the thumbnail for the current attachment.
@@ -219,7 +201,7 @@ module Technoweenie # :nodoc:
       
       # Sanitizes a filename.
       def filename=(new_name)
-        write_attribute :filename, sanitize_filename(new_name)
+        write_attribute :filename, new_name && sanitize_filename(new_name)
       end
 
       # Returns the width/height in a suitable format for the image_tag helper: (100x100)
@@ -227,9 +209,9 @@ module Technoweenie # :nodoc:
         [width.to_s, height.to_s] * 'x'
       end
 
-      # Returns true if the attachment data will be written to the storage system on the next save
+      # Returns true if there is unstored attachment data that should be written to the storage system on the next save
       def save_attachment?
-        File.file?(temp_path.to_s)
+        source && store
       end
 
       # nil placeholder in case this field is used in a form.
@@ -247,25 +229,44 @@ module Technoweenie # :nodoc:
       #
       # TODO: Allow it to work with Merb tempfiles too.
       def file=(file_data)
-        return nil if file_data.nil? || file_data.size == 0 
-        self.content_type = file_data.content_type
-        self.filename     = file_data.original_filename if respond_to?(:filename)
-        self.size         = file_data.size
-        if file_data.is_a?(StringIO)
-          file_data.rewind
-          self.temp_data = file_data.read
-        else
-          self.temp_path = file_data.path
-        end
+        self.store = true
+        self.source = Technoweenie::AttachmentFu::Sources::CGIUpload.new(file_data)
       end
-
+      
+      def url=(u)
+        self.source = Technoweenie::AttachmentFu::Sources::URI.new(u, store || process_attachment?)
+        self[:url] = u
+      end
+      
+      # Returns true if the source must be processed (either as an attachment or in the process of creating a thumbnail).
+      def process_attachment?
+        c1 = resize && store # This attachment is to be stored locally and it should be resized
+        c2 = thumbs.each do |ttype, toption|
+          return true if [Array, Geometry].include?(toption.class)
+        end
+        c1 || c2
+      end
+      
+      # Update the source and check for source collisions.
+      def source=(s)
+        raise "Attachment source collision." unless @source.nil?
+        update_source(s)
+      end
+      
+      # Store the source and flag the update.
+      def update_source(new_source)
+        @source_udpated = true
+        load_metadata(new_source)
+        self.temp_path = new_source.tempfile
+        @source = new_source
+      end
+      
       # Gets the latest temp path from the collection of temp paths.  While working with an attachment,
       # multiple Tempfile objects may be created for various processing purposes (resizing, for example).
       # An array of all the tempfile objects is stored so that the Tempfile instance is held on to until
       # it's not needed anymore.
       def temp_path
-        p = temp_paths.first
-        p.respond_to?(:path) ? p.path : p.to_s if p
+        temp_paths.first
       end
       
       # Gets an array of the currently used temp paths.  Upon initialization, a temp_file of the current data is created.
@@ -311,59 +312,27 @@ module Technoweenie # :nodoc:
       #   end
       #
       def with_image(&block)
-        raise "Local processing not currently supported with with remote images." unless local?
         self.class.with_image(temp_path, &block)
       end
 
-      # Evaluate if a download is required and select the right HTTP method.  Don't bother downloading 
-      # if we've been given the metadata directly.  And don't download if there is no URL, of course.
-      def download
+      # Load metadata, where missing, from the (external) source.
+      def load_metadata(s)
         begin
-          download!(self[:url], http_method_required, 5) if self[:url] and not (self.size and self.content_type)
+          self.filename = s.filename
+          self.size = s.size
+          self.digest = s.digest
+          self.content_type = s.content_type
+          true
         rescue => e
-          errors.add(:url, e.message)
+          errors.add(:base, e.message)
           false
         end
-      end
-      
-      # Download from URL.  Attachment metadata is loaded from the header only if method is :head.  If the method
-      # is :get, the body is returned and used to calculate the metadata.
-      def download!(url = self.url, method = :head, count = 5)
-        uri = URI.parse(url)
-        Net::HTTP.start(uri.host) do |http|
-          response = http.send(method, uri.path)
-          case response
-            when Net::HTTPSuccess
-              self.content_type = response.content_type
-              if response.body.nil? or response.body.size.zero? or self.class.program_content_types.include?(content_type)
-                self.size = response.content_length
-                self.digest = ActiveSupport::Base64.decode64(response['Content-MD5']) unless response['Content-MD5'].nil? 
-              else
-                self.size = response.body.size
-                self.temp_data = response.body
-                self.filename = uri.path.split('/')[-1]
-              end
-            when Net::HTTPRedirection
-              raise ArgumentError, "URL results in too many redirections." if count.zero?
-              return download!(response['location'], method, count-1)
-            else
-              raise ArgumentError, "Couldn't open URL"
-            end
-        end
-      end
-  
-      # Returns the HTTP method required (GET or HEAD) based on the thumbnail options.
-      def http_method_required
-        thumbs.each do |ttype, toption|
-          return :get if [Array, Geometry].include?(toption.class)
-        end
-        :head
       end
       
       # Returns a hash of rules for how to build various thumbnails.  Defaults from the has_attachment method
       # can be overridden in the constructor options with the :thumbs psuedo-attribute.
       def thumbs
-        @thumbs ||= (attachment_options[:thumbs] || {})
+        @thumbs ||= attachment_options[:thumbs] || {}
       end
       
       def mime_type
@@ -376,13 +345,6 @@ module Technoweenie # :nodoc:
         @mime_type
       end
     
-      # Validate that one or the other of the attachment sources is present.
-      def valid_source?
-        returning (self.local? || self[:url]) do |present|
-          self.errors.add_to_base('Attachment must have exactly one source.') unless present
-        end
-      end
-  
       protected
         # Generates a unique filename for a Tempfile. 
         def random_tempfile_filename
@@ -390,7 +352,7 @@ module Technoweenie # :nodoc:
         end
 
         def sanitize_filename(filename)
-          returning filename.strip do |name|
+          returning filename && filename.strip do |name|
             # NOTE: File.basename doesn't work right with Windows paths on Unix
             # get only the filename, not the whole path
             name.gsub! /^.*(\\|\/)/, ''
@@ -413,38 +375,34 @@ module Technoweenie # :nodoc:
             thumbnail_class.find_or_initialize_by_thumbnail(file_name_suffix.to_s)
         end
 
-        # Stub for a #process_attachment method in a processor
+        # Stub for a #process_attachment method in a processor.  Return true if the image should be processed.
         def process_attachment
-          @saved_attachment = save_attachment?
+          process_attachment?
         end
 
-        def calculate_summary_metrics
+        # Store the attachment to the backend, if required, and trigger associated callbacks.
+        def save_attachment
           if save_attachment?
-            self.size   = File.size(temp_path)
-            self.digest = Digest::MD5.digest(temp_data)
+            save_to_storage
+            callback :after_attachment_saved
           end
         end
-        
-        # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
-        def after_process_attachment
+      
+        # Create additional child attachments for each requested thumbnail.  Thumbnails can be specificed in various ways...
+        def process_thumbnails
           thumbs.each do |ttype, tsource|
             unless tsource.nil?
               case tsource
-                when Array, Geometry
+                when Array, Geometry  # ex. :thumbnail => [100, 100]
                   # Don't bother trying to create a thumbnail if no data was saved (particularly when a URL cannot be retrieved)
-                  if @saved_attachment && respond_to?(:process_attachment_with_processing)
-                    toptions = {
-                        :content_type             => content_type, 
-                        :filename                 => thumbnail_name_for(ttype), 
-                        :temp_path                => temp_path || create_temp_file,
-                        :thumbnail_resize_options => tsource
-                    }
+                  if image? && self.source && respond_to?(:process_attachment_with_processing)
+                    toptions = {:source => source, :resize => tsource, :store => true}
                   end
-                when String
+                when String  # example: :thumbnail => 'http://flickr.com/c47xx35' <- This should be replaced with hash!
                   toptions = {:url => tsource}
-                when Hash
+                when Hash  # example: :thumbnail => {:url => 'http://flickr.com/9876vch33'}
                   toptions = tsource
-                else
+                else  # example: thumbnail => {<CGI File object>}  <- This should be replaced with hash!
                   if tsource.respond_to?(:original_filename)
                     toptions = {:file => tsource}
                   else
@@ -456,25 +414,11 @@ module Technoweenie # :nodoc:
               create_or_update_thumbnail(ttype, toptions) if toptions
             end # unless
           end # each
-          if @saved_attachment
-            save_to_storage
-            @saved_attachment = nil
-            callback :after_attachment_saved
-          end
-        end
-
-        # Resizes the given processed img object with either the attachment resize options or the thumbnail resize options.
-        def resize_image_or_thumbnail!(img)
-          if (!respond_to?(:parent_id) || parent_id.nil?) && attachment_options[:resize_to] # parent image
-            resize_image(img, attachment_options[:resize_to])
-          elsif thumbnail_resize_options # thumbnail
-            resize_image(img, thumbnail_resize_options) 
-          end
         end
 
         # Removes the thumbnails for the attachment, if it has any
         def destroy_thumbnails
-          self.thumbnails.each { |thumbnail| thumbnail.destroy } if thumbnailable?
+          self.thumbnails.each { |thumbnail| thumbnail.destroy }
         end
     end
   end

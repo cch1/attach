@@ -12,7 +12,8 @@ module Technoweenie # :nodoc:
           # Yields a block containing an RMagick Image for the given binary data.
           def with_image(file, &block)
             begin
-              binary_data = file.is_a?(Magick::Image) ? file : Magick::Image.read(file).first unless !Object.const_defined?(:Magick)
+              # NB: Magick::Image#read is too stupid to handle Tempfiles (much less CGI Uploads) so we need to pass a path string instead.
+              binary_data = file.is_a?(Magick::Image) ? file : Magick::Image.read(file.path).first unless !Object.const_defined?(:Magick)
             rescue
               # Log the failure to load the image.  This should match ::Magick::ImageMagickError
               # but that would cause acts_as_attachment to require rmagick.
@@ -29,7 +30,7 @@ module Technoweenie # :nodoc:
         def process_attachment_with_processing
           return unless process_attachment_without_processing
           with_image do |img|
-            resize_image_or_thumbnail! img
+            resize_image(img, resize) if resize
             self.width  = img.columns if respond_to?(:width)
             self.height = img.rows    if respond_to?(:height)
             img.strip! if self.thumbnail?
@@ -46,7 +47,7 @@ module Technoweenie # :nodoc:
           else
             img.change_geometry(size.to_s) { |cols, rows, image| image.resize!(cols, rows) }
           end
-          self.temp_path = write_to_temp_file(img.to_blob)
+          update_source(Technoweenie::AttachmentFu::Sources::Rmagick.new(img, source, thumbnail))
         end
       end
     end
