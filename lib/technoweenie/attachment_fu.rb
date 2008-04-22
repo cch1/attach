@@ -245,17 +245,15 @@ module Technoweenie # :nodoc:
       end
       
       def url=(u)
-        self.source = Technoweenie::AttachmentFu::Sources::URI.new(u, store || process_attachment?)
+        self.source = Technoweenie::AttachmentFu::Sources::URI.new(u, store || resize || process_thumbs?)
         self[:url] = u
       end
       
-      # Returns true if the source must be processed (either as an attachment or in the process of creating a thumbnail).
-      def process_attachment?
-        c1 = resize && store # This attachment is to be stored locally and it should be resized
-        c2 = thumbs.each do |ttype, toption|
+      # Returns true if thumbs are requested for this attachment.
+      def process_thumbs?
+        thumbs.each do |ttype, toption|
           return true if [Array, Geometry].include?(toption.class)
         end
-        c1 || c2
       end
       
       # Update the source and check for source collisions.
@@ -266,9 +264,7 @@ module Technoweenie # :nodoc:
       
       # Store the source and flag the update.
       def update_source(new_source)
-        @source_udpated = true
-        load_metadata(new_source)
-        self.temp_path = new_source.tempfile
+        load_source(new_source)
         @source = new_source
       end
       
@@ -326,17 +322,15 @@ module Technoweenie # :nodoc:
         self.class.with_image(temp_path, &block)
       end
 
-      # Load metadata, where missing, from the (external) source.
-      def load_metadata(s)
+      # Load data and metadata, where missing, from the (external) source.
+      def load_source(s)
         begin
           self.filename = s.filename
           self.size = s.size
           self.digest = s.digest
           self.content_type = s.content_type
-          true
-        rescue => e
-          errors.add(:base, e.message)
-          false
+          self.temp_path = s.tempfile
+        rescue
         end
       end
       
@@ -386,9 +380,9 @@ module Technoweenie # :nodoc:
             thumbnail_class.find_or_initialize_by_thumbnail(file_name_suffix.to_s)
         end
 
-        # Stub for a #process_attachment method in a processor.  Return true if the image should be processed.
+        # Chained by processors to perform actual image processing.  Return true here if processing should occur.
         def process_attachment
-          process_attachment?
+          store || process_thumbs?  # Process the image if we are going to store it, or we are going to make thumbs from it.
         end
 
         # Store the attachment to the backend, if required, and trigger associated callbacks.
@@ -396,6 +390,7 @@ module Technoweenie # :nodoc:
           if save_attachment?
             save_to_storage
             callback :after_attachment_saved
+            @source = nil
           end
         end
       
