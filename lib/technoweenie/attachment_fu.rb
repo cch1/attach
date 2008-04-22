@@ -108,6 +108,17 @@ module Technoweenie # :nodoc:
     end
 
     module ClassMethods
+      def self.extended(base)
+        unless defined?(::ActiveSupport::Callbacks)
+          def before_save_thumbnail(&block)
+            write_inheritable_array(:before_save_thumbnail, [block])
+          end
+          def before_save_attachment(&block)
+            write_inheritable_array(:before_save_attachment, [block])
+          end
+        end
+      end
+      
       delegate :content_types, :to => Technoweenie::AttachmentFu
       delegate :thumb_content_types, :to => Technoweenie::AttachmentFu
       delegate :icon_content_types, :to => Technoweenie::AttachmentFu
@@ -157,7 +168,7 @@ module Technoweenie # :nodoc:
 
     module InstanceMethods
       def self.included( base )
-        base.define_callbacks *[:after_resize, :after_attachment_saved, :before_save_attachment, :before_save_thumbnail, :before_thumbnail_saved]
+        base.define_callbacks *[:after_resize, :after_attachment_saved, :before_save_attachment, :before_save_thumbnail, :before_thumbnail_saved] if base.respond_to?(:define_callbacks)
       end  
   
       # Trigger appropriate custom callbacks.
