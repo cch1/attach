@@ -42,7 +42,6 @@ module Technoweenie # :nodoc:
         def tempfile
           t = Tempfile.new(filename, Technoweenie::AttachmentFu.tempfile_path)
           t.close
-          p t.path
           @tempfile ||= @img.write(t.path)
         end
         
