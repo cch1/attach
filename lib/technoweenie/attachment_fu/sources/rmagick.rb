@@ -40,7 +40,10 @@ module Technoweenie # :nodoc:
 
         # Return the source's data as a tempfile.
         def tempfile
-          @tempfile ||= @img.write(filename)
+          t = Tempfile.new(filename, Technoweenie::AttachmentFu.tempfile_path)
+          t.close
+          p t.path
+          @tempfile ||= @img.write(t.path)
         end
         
         private
