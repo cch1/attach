@@ -1,5 +1,5 @@
-module Technoweenie # :nodoc:
-  module AttachmentFu # :nodoc:
+module GroupSmarts # :nodoc:
+  module Attach # :nodoc:
     module Sources
       # Abstract class for attachment sources.  All subclasses should provide a means of resolving
       #   size            : The size of the attachment in bytes

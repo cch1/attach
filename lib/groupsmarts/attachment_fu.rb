@@ -1,7 +1,7 @@
-module Technoweenie # :nodoc:
-  module AttachmentFu # :nodoc:
+module GroupSmarts # :nodoc:
+  module Attach # :nodoc:
     @@default_processors = %w(ImageScience Rmagick MiniMagick)
-    @@tempfile_path      = File.join(RAILS_ROOT, 'tmp', 'attachment_fu')
+    @@tempfile_path      = File.join(RAILS_ROOT, 'tmp', 'attach')
     @@thumb_content_types = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png', 'image/jpg', 'image/bmp']
     @@program_content_types = ['text/html']
     @@icon_content_types = @@program_content_types + ['application/xls']
@@ -48,7 +48,7 @@ module Technoweenie # :nodoc:
         options[:thumbs]           ||= {}
         options[:thumbnail_class]  ||= self
         options[:s3_access]        ||= :public_read
-        options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Technoweenie::AttachmentFu.thumb_content_types : t }.flatten unless options[:content_type].nil?
+        options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? GroupSmarts::Attach.thumb_content_types : t }.flatten unless options[:content_type].nil?
         
         unless options[:thumbs].is_a?(Hash)
           raise ArgumentError, ":thumbs option should be a hash: e.g. :thumbs => { :foo => [150,150] }"
@@ -85,20 +85,20 @@ module Technoweenie # :nodoc:
           after_destroy :destroy_file
           extend  ClassMethods
           include InstanceMethods
-          include Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
+          include GroupSmarts::Attach::Backends.const_get("#{options[:storage].to_s.classify}Backend")
           case attachment_options[:processor]
             when :none
             when nil
-              processors = Technoweenie::AttachmentFu.default_processors.dup
+              processors = GroupSmarts::Attach.default_processors.dup
               begin
-                include Technoweenie::AttachmentFu::Processors.const_get("#{processors.first}Processor") if processors.any?
+                include GroupSmarts::Attach::Processors.const_get("#{processors.first}Processor") if processors.any?
               rescue LoadError, MissingSourceFile
                 processors.shift
                 retry
               end
             else
               begin
-                include Technoweenie::AttachmentFu::Processors.const_get("#{options[:processor].to_s.classify}Processor")
+                include GroupSmarts::Attach::Processors.const_get("#{options[:processor].to_s.classify}Processor")
               rescue LoadError, MissingSourceFile
                 puts "Problems loading #{options[:processor]}Processor: #{$!}"
               end
@@ -119,10 +119,10 @@ module Technoweenie # :nodoc:
         end
       end
       
-      delegate :content_types, :to => Technoweenie::AttachmentFu
-      delegate :thumb_content_types, :to => Technoweenie::AttachmentFu
-      delegate :icon_content_types, :to => Technoweenie::AttachmentFu
-      delegate :program_content_types, :to => Technoweenie::AttachmentFu
+      delegate :content_types, :to => GroupSmarts::Attach
+      delegate :thumb_content_types, :to => GroupSmarts::Attach
+      delegate :icon_content_types, :to => GroupSmarts::Attach
+      delegate :program_content_types, :to => GroupSmarts::Attach
 
       # Performs common validations for attachment models.
       def validates_as_attachment
@@ -149,7 +149,7 @@ module Technoweenie # :nodoc:
       # NB: This method looks bogus.  The Tempfile.new method returns a file with the necessary properties.  Copying an existing file onto the name
       #     previously held by a tempfile does not make the copy a Tempfile. 
       def copy_to_temp_file(file, temp_base_name)
-        returning Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
+        returning Tempfile.new(temp_base_name, GroupSmarts::Attach.tempfile_path) do |tmp|
           tmp.close
           FileUtils.cp file, tmp.path
         end
@@ -158,7 +158,7 @@ module Technoweenie # :nodoc:
       # Writes the given data to a new tempfile, returning the closed tempfile.
       # NB: Under Win32 on Ruby 1.8.6, tempfiles are not usually deleted due to silent failures in the unlink method.
       def write_to_temp_file(data, temp_base_name)
-        returning Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
+        returning Tempfile.new(temp_base_name, GroupSmarts::Attach.tempfile_path) do |tmp|
           tmp.binmode
           tmp.write data
           tmp.close
@@ -241,11 +241,11 @@ module Technoweenie # :nodoc:
       # TODO: Allow it to work with Merb tempfiles too.
       def file=(file_data)
         self.store = true
-        self.source = Technoweenie::AttachmentFu::Sources::CGIUpload.new(file_data)
+        self.source = GroupSmarts::Attach::Sources::CGIUpload.new(file_data)
       end
       
       def url=(u)
-        self.source = Technoweenie::AttachmentFu::Sources::URI.new(u, store || resize || process_thumbs?)
+        self.source = GroupSmarts::Attach::Sources::URI.new(u, store || resize || process_thumbs?)
         self[:url] = u
       end
       

@@ -1,5 +1,5 @@
-module Technoweenie # :nodoc:
-  module AttachmentFu # :nodoc:
+module GroupSmarts # :nodoc:
+  module Attach # :nodoc:
     module Backends
       # = AWS::S3 Storage Backend
       #
@@ -167,15 +167,15 @@ module Technoweenie # :nodoc:
 
         module ClassMethods
           def s3_protocol
-            Technoweenie::AttachmentFu::Backends::S3Backend.protocol
+            GroupSmarts::Attach::Backends::S3Backend.protocol
           end
           
           def s3_hostname
-            Technoweenie::AttachmentFu::Backends::S3Backend.hostname
+            GroupSmarts::Attach::Backends::S3Backend.hostname
           end
           
           def s3_port_string
-            Technoweenie::AttachmentFu::Backends::S3Backend.port_string
+            GroupSmarts::Attach::Backends::S3Backend.port_string
           end
         end
 
@@ -256,15 +256,15 @@ module Technoweenie # :nodoc:
         end
 
         def s3_protocol
-          Technoweenie::AttachmentFu::Backends::S3Backend.protocol
+          GroupSmarts::Attach::Backends::S3Backend.protocol
         end
         
         def s3_hostname
-          Technoweenie::AttachmentFu::Backends::S3Backend.hostname
+          GroupSmarts::Attach::Backends::S3Backend.hostname
         end
           
         def s3_port_string
-          Technoweenie::AttachmentFu::Backends::S3Backend.port_string
+          GroupSmarts::Attach::Backends::S3Backend.port_string
         end
 
         protected

@@ -1,8 +1,8 @@
-module Technoweenie # :nodoc:
-  module AttachmentFu # :nodoc:
+module GroupSmarts # :nodoc:
+  module Attach # :nodoc:
     module Sources
       # Methods for URL-based sources
-      class URI < Technoweenie::AttachmentFu::Sources::Base
+      class URI < GroupSmarts::Attach::Sources::Base
         # Download from a URI
         def self.download(uri, method = :head, count = 5)
           Net::HTTP.start(uri.host) do |http|
@@ -71,7 +71,7 @@ module Technoweenie # :nodoc:
         # Return the source's data as a tempfile.  WARNING: Performance problems can result if the source is large, remote or both.
         # TODO: Return a true tempfile.
         def tempfile
-          returning Tempfile.new(filename, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
+          returning Tempfile.new(filename, GroupSmarts::Attach.tempfile_path) do |tmp|
             tmp.binmode
             tmp.write(data)
             tmp.close

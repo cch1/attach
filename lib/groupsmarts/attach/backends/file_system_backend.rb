@@ -1,6 +1,6 @@
 require 'ftools'
-module Technoweenie # :nodoc:
-  module AttachmentFu # :nodoc:
+module GroupSmarts # :nodoc:
+  module Attach # :nodoc:
     module Backends
       # Methods for file system backed attachments
       module FileSystemBackend

@@ -85,15 +85,15 @@ class S3Test < Test::Unit::TestCase
       end
       
       def s3_protocol
-        Technoweenie::AttachmentFu::Backends::S3Backend.protocol
+        GroupSmarts::Attach::Backends::S3Backend.protocol
       end
       
       def s3_hostname
-        Technoweenie::AttachmentFu::Backends::S3Backend.hostname
+        GroupSmarts::Attach::Backends::S3Backend.hostname
       end
 
       def s3_port_string
-        Technoweenie::AttachmentFu::Backends::S3Backend.port_string
+        GroupSmarts::Attach::Backends::S3Backend.port_string
       end
   else
     def test_flunk_s3

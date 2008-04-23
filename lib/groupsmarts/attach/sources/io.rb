@@ -1,8 +1,8 @@
-module Technoweenie # :nodoc:
-  module AttachmentFu # :nodoc:
+module GroupSmarts # :nodoc:
+  module Attach # :nodoc:
     module Sources
       # Methods for IO-based sources.
-      class IO < Technoweenie::AttachmentFu::Sources::Base
+      class IO < GroupSmarts::Attach::Sources::Base
         # Squirrel away the source
         def initialize(source)
           super
@@ -37,7 +37,7 @@ module Technoweenie # :nodoc:
 
         # Return the source's data as a tempfile.  WARNING: Performance problems can result if the source is large, remote or both.
         def tempfile
-          returning Tempfile.new(filename, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
+          returning Tempfile.new(filename, GroupSmarts::Attach.tempfile_path) do |tmp|
             tmp.binmode
             tmp.write(data)
             tmp.close

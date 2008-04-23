@@ -1,6 +1,6 @@
 require 'RMagick'
-module Technoweenie # :nodoc:
-  module AttachmentFu # :nodoc:
+module GroupSmarts # :nodoc:
+  module Attach # :nodoc:
     module Processors
       module RmagickProcessor
         def self.included(base)
@@ -47,7 +47,7 @@ module Technoweenie # :nodoc:
           else
             img.change_geometry(size.to_s) { |cols, rows, image| image.resize!(cols, rows) }
           end
-          update_source(Technoweenie::AttachmentFu::Sources::Rmagick.new(img, source, thumbnail))
+          update_source(GroupSmarts::Attach::Sources::Rmagick.new(img, source, thumbnail))
         end
       end
     end

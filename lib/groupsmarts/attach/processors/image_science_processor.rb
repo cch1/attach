@@ -1,6 +1,6 @@
 require 'image_science'
-module Technoweenie # :nodoc:
-  module AttachmentFu # :nodoc:
+module GroupSmarts # :nodoc:
+  module Attach # :nodoc:
     module Processors
       module ImageScienceProcessor
         def self.included(base)

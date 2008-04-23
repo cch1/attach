@@ -1,8 +1,8 @@
-module Technoweenie # :nodoc:
-  module AttachmentFu # :nodoc:
+module GroupSmarts # :nodoc:
+  module Attach # :nodoc:
     module Sources
       # Methods for CGI File-based sources (either the StringIO or Tempfile manifestation with singleton methods for metadata)
-      class CGIUpload < Technoweenie::AttachmentFu::Sources::IO
+      class CGIUpload < GroupSmarts::Attach::Sources::IO
         # Return size of source in bytes.
         def size
           @source.size

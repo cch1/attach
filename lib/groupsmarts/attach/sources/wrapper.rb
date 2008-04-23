@@ -1,8 +1,8 @@
-module Technoweenie # :nodoc:
-  module AttachmentFu # :nodoc:
+module GroupSmarts # :nodoc:
+  module Attach # :nodoc:
     module Sources
       # Methods for sources that start with an existing source but override some of its aspects.
-      class Wrapper < Technoweenie::AttachmentFu::Sources::Base
+      class Wrapper < GroupSmarts::Attach::Sources::Base
         attr_writer :size, :filename, :content_type, :digest
 
         # Squirrel away the target

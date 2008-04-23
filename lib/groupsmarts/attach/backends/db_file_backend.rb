@@ -1,6 +1,6 @@
 require File.join(File.dirname(__FILE__), 'db_file')
-module Technoweenie # :nodoc:
-  module AttachmentFu # :nodoc:
+module GroupSmarts # :nodoc:
+  module Attach # :nodoc:
     module Backends
       # Methods for DB backed attachments
       module DbFileBackend

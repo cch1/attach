@@ -1,8 +1,8 @@
-module Technoweenie # :nodoc:
-  module AttachmentFu # :nodoc:
+module GroupSmarts # :nodoc:
+  module Attach # :nodoc:
     module Sources
       # Methods for attachments modified by RMagick
-      class Rmagick < Technoweenie::AttachmentFu::Sources::Base
+      class Rmagick < GroupSmarts::Attach::Sources::Base
         attr_reader :filename
         
         def initialize(img, original_source, thumbnail)
@@ -40,7 +40,7 @@ module Technoweenie # :nodoc:
 
         # Return the source's data as a tempfile.
         def tempfile
-          t = Tempfile.new(filename, Technoweenie::AttachmentFu.tempfile_path)
+          t = Tempfile.new(filename, GroupSmarts::Attach.tempfile_path)
           t.close
           @tempfile ||= @img.write(t.path)
         end
