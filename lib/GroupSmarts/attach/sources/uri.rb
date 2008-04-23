@@ -19,29 +19,32 @@ module GroupSmarts # :nodoc:
           end
         end
       
-        def initialize(url, d = false)
+        def initialize(url)
           super
           @source = url
-          @download = d
-        end
-
-        # Returns the data of this source as an IO-compatible object
-        def io
-          @io ||= StringIO.new(response.body || "", 'rb')
         end
 
         def uri
-          @uri ||= ::URI.parse(@source)
+          @uri ||= ::URI.parse(@source).normalize
         end
         
         # Returns the response from the remote server
-        def response
-          @response ||= self.class.download(uri, @download ? :get : :head)
+        def response(full = false)
+          @response ||= self.class.download(uri, full ? :get : :head)
+        end
+        
+        def load!(full = false)
+          begin
+            response(full)
+          rescue => e
+            @error = e.message
+            false
+          end
         end
         
         # Return size of source in bytes.
         def size
-          response.content_length || response.body.size
+          response.content_length || (response.body && response.body.size)
         end
         
         # Return content type of source as a string.
@@ -49,33 +52,36 @@ module GroupSmarts # :nodoc:
           response.content_type
         end
         
-        # Return a filename for the source
-        def filename
-          uri.path.split('/')[-1] || 'downloaded_attachment'
-        end
-        
         # Return the MD5 digest of the source
         def digest
           if response['Content-MD5']
             ActiveSupport::Base64.decode64(response['Content-MD5'])
           elsif data
-            Digest::MD5.digest(data)
+            super
           end
         end
         
+        # Augment metadata hash
+        def metadata
+          returning super do |h|
+            h[:uri] = uri
+            h[:content_type] = content_type
+          end
+        end
+        
+        # Returns the data of this source as an IO-compatible object
+        def io
+          @io ||= StringIO.new(response.body || "", 'rb')
+        end
+
         # Return the source's data.  WARNING: Performance problems can result if the source is large, remote or both.
         def data
           response.body
         end
 
-        # Return the source's data as a tempfile.  WARNING: Performance problems can result if the source is large, remote or both.
-        # TODO: Return a true tempfile.
-        def tempfile
-          returning Tempfile.new(filename, GroupSmarts::Attach.tempfile_path) do |tmp|
-            tmp.binmode
-            tmp.write(data)
-            tmp.close
-          end
+        private
+        def filename
+          uri.path.split('/')[-1]
         end
       end
     end

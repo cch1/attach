@@ -5,10 +5,15 @@ module GroupSmarts # :nodoc:
       class Rmagick < GroupSmarts::Attach::Sources::Base
         attr_reader :filename
         
-        def initialize(img, original_source, thumbnail)
+        def initialize(img, original, thumbnail)
           super
           @img = img
-          @filename = thumbnail_name_for(original_source.filename, thumbnail)
+          @original = original
+          @filename = thumbnail_name_for(original.uri.path.split('/')[-1], thumbnail)
+        end
+        
+        def uri
+          @original.uri
         end
         
         # Returns the data of this source as an IO-compatible object

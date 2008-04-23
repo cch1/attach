@@ -3,9 +3,10 @@ module GroupSmarts # :nodoc:
     module Sources
       # Methods for CGI File-based sources (either the StringIO or Tempfile manifestation with singleton methods for metadata)
       class CGIUpload < GroupSmarts::Attach::Sources::IO
-        # Return size of source in bytes.
-        def size
-          @source.size
+        
+        # Returns a URI string representing the attachment.
+        def uri
+          ::URI.parse(@source.original_filename)
         end
         
         # Return content type of source as a string.
@@ -13,14 +14,12 @@ module GroupSmarts # :nodoc:
           @source.content_type
         end
         
-        # Return a filename for the source
-        def filename
-          @source.original_filename
-        end
-        
-        # Return the MD5 digest of the source
-        def digest
-          Digest::MD5.digest(data)
+        # Augment metadata
+        def metadata
+          returning super do |h|
+            h[:uri] = uri
+            h[:content_type] = content_type
+          end          
         end
         
         # Return the source's data.  WARNING: Performance problems can result if the source is large, remote or both.

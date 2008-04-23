@@ -10,5 +10,5 @@ end
 
 require 'geometry'
 ActiveRecord::Base.send(:extend, GroupSmarts::Attach::ActMethods)
-GroupSmarts::Attach.tempfile_path = attach_TEMPFILE_PATH if Object.const_defined?(:attach_TEMPFILE_PATH)
+GroupSmarts::Attach.tempfile_path = ATTACH_TEMPFILE_PATH if Object.const_defined?(:ATTACH_TEMPFILE_PATH)
 FileUtils.mkdir_p GroupSmarts::Attach.tempfile_path

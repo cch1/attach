@@ -78,6 +78,7 @@ module GroupSmarts # :nodoc:
           end
           before_destroy :destroy_thumbnails
 
+          before_validation :process_source
           before_validation :process_attachment
           before_save :evaluate_custom_callbacks
           after_save :process_thumbnails
@@ -128,7 +129,7 @@ module GroupSmarts # :nodoc:
       def validates_as_attachment
         validates_presence_of   :content_type
         validate                :valid_content_type?
-        validates_presence_of   :filename
+        validates_presence_of   :uri
         validates_inclusion_of  :size, :in => attachment_options[:size], :if => Proc.new{|r| r.local? && r.thumbnail.nil?}
       end
 
@@ -205,15 +206,11 @@ module GroupSmarts # :nodoc:
         end
       end
 
-      # Sets the content type.
-      def content_type=(new_type)
-        write_attribute :content_type, new_type.to_s.strip
+      # Return a filename for the attachment
+      def filename
+        uri.path.split('/')[-1] || 'attachment'
       end
       
-      # Sanitizes a filename.
-      def filename=(new_name)
-        write_attribute :filename, new_name && sanitize_filename(new_name)
-      end
 
       # Returns the width/height in a suitable format for the image_tag helper: (100x100)
       def image_size
@@ -245,8 +242,7 @@ module GroupSmarts # :nodoc:
       end
       
       def url=(u)
-        self.source = GroupSmarts::Attach::Sources::URI.new(u, store || resize || process_thumbs?)
-        self[:url] = u
+        self.source = GroupSmarts::Attach::Sources::URI.new(u)
       end
       
       # Returns true if thumbs are requested for this attachment.
@@ -254,15 +250,16 @@ module GroupSmarts # :nodoc:
         thumbs.each do |ttype, toption|
           return true if [Array, Geometry].include?(toption.class)
         end
+        return false
       end
       
       # Update the source and check for source collisions.
       def source=(s)
         raise "Attachment source collision." unless @source.nil?
-        update_source(s)
+        @source = s
       end
       
-      # Store the source and flag the update.
+      # Store the source and immediately load it.
       def update_source(new_source)
         load_source(new_source)
         @source = new_source
@@ -325,12 +322,11 @@ module GroupSmarts # :nodoc:
       # Load data and metadata, where missing, from the (external) source.
       def load_source(s)
         begin
-          self.filename = s.filename
-          self.size = s.size
-          self.digest = s.digest
-          self.content_type = s.content_type
+          s.load!(store || resize || process_thumbs?)
+          self.attributes = s.metadata
           self.temp_path = s.tempfile
         rescue
+          return false
         end
       end
       
@@ -340,10 +336,24 @@ module GroupSmarts # :nodoc:
         @thumbs ||= attachment_options[:thumbs] || {}
       end
       
-      def mime_type
-        @mime_type ||= Mime::Type.lookup(self.attributes['content_type'])
+      # Getter for URI.  Return an instance of ::URI
+      def uri
+        @uri ||= URI.parse(read_attribute(:uri)) if read_attribute(:uri)
       end
       
+      # Setter for URI.  Accepts a string representation of a URI, or a ::URI instance.
+      def uri=(u)
+        @uri = u.kind_of?(::URI) ? u : URI.parse(u).normalize!
+        write_attribute(:uri, @uri.to_s)
+        @uri
+      end
+      
+      # Getter for MIME type.  Returns an instance of Mime::Type
+      def mime_type
+        @mime_type ||= Mime::Type.lookup(read_attribute(:content_type))
+      end
+      
+      # Setter for Mime type.  Accepts a string representation of a Mime type, or a ::Mime::Type instance.
       def mime_type=(mt)
         @mime_type = mt.kind_of?(Mime::Type) ? mt : Mime::Type.lookup(mt)
         write_attribute(:content_type, @mime_type.to_s)
@@ -354,17 +364,6 @@ module GroupSmarts # :nodoc:
         # Generates a unique filename for a Tempfile. 
         def random_tempfile_filename
           "#{rand Time.now.to_i}#{filename || 'attachment'}"
-        end
-
-        def sanitize_filename(filename)
-          returning filename && filename.strip do |name|
-            # NOTE: File.basename doesn't work right with Windows paths on Unix
-            # get only the filename, not the whole path
-            name.gsub! /^.*(\\|\/)/, ''
-            
-            # Finally, replace all non alphanumeric, underscore or periods with underscore
-            name.gsub! /[^\w\.\-]/, '_'
-          end
         end
 
         # validates the content_type attribute according to the current model's options
@@ -379,10 +378,15 @@ module GroupSmarts # :nodoc:
             thumbnails.find_or_initialize_by_thumbnail(file_name_suffix.to_s) :
             thumbnail_class.find_or_initialize_by_thumbnail(file_name_suffix.to_s)
         end
+        
+        # Validation callback.
+        def process_source
+          source.nil? || (source.valid? && load_source(source))
+        end
 
-        # Chained by processors to perform actual image processing.  Return true here if processing should occur.
+        # Validation callback.  Chained by processors to perform actual image processing.  Return true here if processing should occur.
         def process_attachment
-          store || process_thumbs?  # Process the image if we are going to store it, or we are going to make thumbs from it.
+          source && source.valid? && (store || process_thumbs?)  # Process the image if we are going to store it, or we are going to make thumbs from it.
         end
 
         # Store the attachment to the backend, if required, and trigger associated callbacks.

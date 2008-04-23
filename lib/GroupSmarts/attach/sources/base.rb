@@ -1,33 +1,71 @@
 module GroupSmarts # :nodoc:
   module Attach # :nodoc:
     module Sources
-      # Abstract class for attachment sources.  All subclasses should provide a means of resolving
+      # Abstract class for attachment sources.  All subclasses should implement:
+      #   uri             : A relative or absolute URI representing the attachment
       #   size            : The size of the attachment in bytes
-      #   filename        : A suitable filename for the attachment
       #   digest          : The MD5 digest of the attachment data
       #   content_type    : The MIME type of the attachment, as a string.
+      #   metadata        : A hash of all metadata available.
       #   io              : An IO-compatible object of the attachment's data
       #   data            : A blob (string) of the attachment's data
       #   tempfile        : A tempfile of the attachment
-      # Any other method invocations should behave as though this object were itself an IO-compatible obeject.
       class Base
+        attr_reader :error
+        
         def initialize(*args)
         end
         
-        # Return an IO-compatible object of the attachment's data.  This is also our proxy target.
+        def valid?
+          error.nil?
+        end
+        
+        # Load the source data/metadata. 
+        def load!(full = true)
+          true
+        end
+        
+        # Return size of source in bytes.
+        def size
+          data.size  
+        end
+
+        # Return the MD5 digest of the source
+        def digest
+          Digest::MD5.digest(data)
+        end
+
+        # Return available metadata.
+        def metadata
+          returning Hash.new do |h|
+            h[:size] = size
+            h[:digest] = digest
+          end
+        end
+        
+        # Return an IO-compatible instance with source's data.
         def io
-          raise "Abstract Class"
+          StringIO.new(data || "", 'rb')
         end
         
-        # The proxy target is the IO-like object.  Send any unresolved calls to it.
-        def method_missing(method, *args, &block)
-          io.__send__(method, *args, &block)
+        # Return the source's data as a blob string
+        def data
+          ""
         end
         
-        # Affirm we respond to proxy target's methods.
-        def respond_to?(method_id, include_private = false)
-          return true if io.respond_to?(method_id, include_private)
-          super
+        # Return a Tempfile with source's data.
+        def tempfile
+          returning Tempfile.new(filename, GroupSmarts::Attach.tempfile_path) do |tmp|
+            tmp.binmode
+            tmp.write(data)
+            tmp.close
+          end          
+        end
+        
+        private
+        # Return a filename suitable for holding this source's data.
+        def filename
+          "#{'attachment'}#{rand Time.now.to_i}"
         end
       end
     end
