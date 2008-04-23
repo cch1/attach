@@ -1,8 +1,15 @@
-attachment-fu
+attach
 =====================
 
-attachment_fu is a plugin by Rick Olson (aka technoweenie <http://techno-weenie.net>) and is the successor to acts_as_attachment.  To get a basic run-through of its capabilities, check out Mike Clark's tutorial <http://clarkware.com/cgi/blosxom/2007/02/24#FileUploadFu>.
+attach is a plugin by Chris Hapgood.  It evolved from Rick Olson's attachment_fu, but is substantially changed to
+	a. Support local and remote attachments.
+	b. Abstract the concept of filename into a URI
+	c. Support higher order abstractions for content_type (::Mime::Type).
+	d. Encapsulate the attachment source into the state pattern (encompassing the null/remote/loaded/processed and eventually stored phases of an attachment.)
+	e. Remove support for s3 and filesystem backends.  These are likely to be easily reinstated, but for now...
+	f. Remove support for image_science and mini_magick processors.  Again, these are likely to be easily reinstated, but for now...
 
+--------------- Original attachment_fu README -------------------
 
 attachment_fu functionality
 ===========================
