@@ -274,8 +274,9 @@ module GroupSmarts # :nodoc:
       end
       
       # Gets an array of the currently used temp paths.  Upon initialization, a temp_file of the current data is created.
+      # TODO: Convert backends into sources and scrap this temp_xxx crap.
       def temp_paths
-        @temp_paths ||= (new_record? ? [] : [create_temp_file])
+        @temp_paths ||= (new_record? ? [source.tempfile] : [create_temp_file])
       end
       
       # Adds a new temp_path to the array.  This should take a string or a Tempfile.  This class makes no 
