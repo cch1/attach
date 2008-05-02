@@ -2,41 +2,46 @@ module GroupSmarts # :nodoc:
   module Attach # :nodoc:
     module Sources
       # Methods for CGI File-based sources (either the StringIO or Tempfile manifestation with singleton methods for metadata)
+      # Also handles the strange example of AC:TUF.
       class CGIUpload < GroupSmarts::Attach::Sources::IO
-        
-        # Returns a URI string representing the attachment.
-        def uri
-          ::URI.parse(@source.original_filename)
+        # =State Transitions=
+        # Convert the bastard IO source into a more specific source.
+        def get
+          case io
+            when Tempfile then Sources::Tempfile.new(self).swallow(io) 
+            when ActionController::TestUploadedFile then Sources::Tempfile.new(self).swallow(io.instance_variable_get(:@tempfile))
+            when StringIO then Sources::IO.new(self).swallow(io)
+          end
         end
         
-        # Return content type of source as a string.
-        def content_type
-          @source.content_type
+        # Persist ourself.
+        def store(id)
+          self.get.store(id)
+        end
+        
+        # Process ourself
+        def process(t)
+          self.get.process(t)
+        end
+        
+        # =Metadata=
+        # Returns a URI string representing the attachment.
+        def uri
+          ::URI.parse(@io.original_filename)
+        end
+        
+        # Returns the MIME::Type of source.
+        def mime_type
+          @io.content_type
         end
         
         # Augment metadata
         def metadata
           returning super do |h|
             h[:uri] = uri
-            h[:content_type] = content_type
+            h[:mime_type] = mime_type
           end          
-        end
-        
-        # Return the source's data.  WARNING: Performance problems can result if the source is large, remote or both.
-        def data
-          @data ||= @source.is_a?(StringIO) ? (@source.rewind;@source.read) : tempfile_to_data
-        end
-
-        # Return the source's data as a tempfile.  WARNING: Performance problems can result if the source is large, remote or both.
-        # TODO: Convert AC:TUF to a true Tempfile.
-        def tempfile
-          @tempfile ||= (@source.is_a?(Tempfile)  || @source.is_a?(ActionController::TestUploadedFile))? @source : super
-        end
-        
-        private
-        def tempfile_to_data
-          tempfile.read
-        end
+        end        
       end
     end
   end

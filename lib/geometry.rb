@@ -2,8 +2,7 @@
 # Use #new_dimensions_for to get new dimensons
 # Used so I can use spiffy RMagick geometry strings with ImageScience
 class Geometry
-  # ! and @ are removed until support for them is added
-  FLAGS = ['', '%', '<', '>']#, '!', '@']
+  FLAGS = {:percent => '%', :< => '<', :> => '>', :area => '@', :aspect => '!'}
   RFLAGS = { '%' => :percent,
              '!' => :aspect,
              '<' => :>,
@@ -15,13 +14,13 @@ class Geometry
   def initialize(width=nil, height=nil, x=nil, y=nil, flag=nil)
     # Support floating-point width and height arguments so Geometry
     # objects can be used to specify Image#density= arguments.
-    raise ArgumentError, "width must be >= 0: #{width}"   if width < 0
-    raise ArgumentError, "height must be >= 0: #{height}" if height < 0
-    @width  = width.to_f
-    @height = height.to_f
-    @x      = x.to_i
-    @y      = y.to_i
+    @width  = width.to_f if width
+    @height = height.to_f if height
+    @x      = x.to_i if x
+    @y      = y.to_i if y
     @flag   = flag
+    raise ArgumentError, "width must be >= 0: #{@width}" if @width && @width < 0
+    raise ArgumentError, "height must be >= 0: #{@height}" if @height && @height < 0
   end
 
   # Construct an object from a geometry string
@@ -31,7 +30,7 @@ class Geometry
     raise(ArgumentError, "no geometry string specified") unless str
   
     if m = RE.match(str)
-      new(m[1].to_i, m[2].to_i, m[3].to_i, m[4].to_i, RFLAGS[m[5]])
+      new(m[1], m[2], m[3], m[4], RFLAGS[m[5]])
     else
       raise ArgumentError, "invalid geometry format"
     end
@@ -40,11 +39,11 @@ class Geometry
   # Convert object to a geometry string
   def to_s
     str = ''
-    str << "%g" % @width if @width > 0
+    str << "%g" % @width if @width
     str << 'x' if (@width > 0 || @height > 0)
-    str << "%g" % @height if @height > 0
+    str << "%g" % @height if @height
     str << "%+d%+d" % [@x, @y] if (@x != 0 || @y != 0)
-    str << FLAGS[@flag.to_i]
+    str << FLAGS[@flag]
   end
   
   # attempts to get new dimensions for the current geometry string given these old dimensions.
@@ -74,6 +73,8 @@ class Geometry
         new_height = scale_factor * new_height.to_f
         new_width  = orig_width  if @flag && orig_width.send(@flag,  new_width)
         new_height = orig_height if @flag && orig_height.send(@flag, new_height)
+      when :area
+        d
     end
 
     [new_width, new_height].collect! { |v| v.round }

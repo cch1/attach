@@ -11,61 +11,118 @@ module GroupSmarts # :nodoc:
       #   data            : A blob (string) of the attachment's data
       #   tempfile        : A tempfile of the attachment
       class Base
-        attr_reader :error
+        attr_reader :error, :data
         
-        def initialize(*args)
+        # Loads data from a primary source with bonus/primer metadata.  Primary sources can be either rich sources (capable of supplying raw 
+        # attachment data and metadata) or simple sources (only able to provide raw data).  Every storage source should also be a primary source. 
+        def self.load(raw_source = nil, metadata = {})
+          case raw_source
+            when ::URI  # raw source is actually a reference to an external source
+              case raw_source.scheme
+                when 'http', 'https' then Sources::Http.new(raw_source, metadata)
+                when 'db' then Sources::ActiveRecord.new(raw_source, metadata)
+                when 'file', NilClass
+                  f = ::File.open(URI.decode(raw_source.path), "r+b")
+                  Sources::File.new(f, metadata)
+                when 's3' then Sources::S3.new(raw_source, metadata)
+                else raise "Source for scheme '#{raw_source.scheme}' not supported."
+              end
+            when File then Sources::File.new(raw_source, metadata)
+            when Tempfile, ActionController::TestUploadedFile then Sources::Tempfile.new(raw_source, metadata)
+            when IO then Sources::IO.new(raw_source, metadata)
+            when String then Sources::Blob.new(raw_source, metadata)
+            when nil then self.new
+            else raise "Don't know how to load #{raw_source.class}."
+          end
+        end
+        
+        # Process the given source with the given transformation.
+        def self.process(source, transform = :identity)
+          transform = transform.to_sym
+          case transform
+            when :iconify then Sources::Http.new(::URI.parse('http://www.iconspedia.com/uploads/1537420179.png'))
+#              when :thumbshot then Source::Thumbshooter.new(source).process()
+#              when :sample then Source::MPEGSampler.new(source).process()
+            when :info, :thumbnail, :vignette, :proof, :max
+              returning(Sources::Rmagick.new(source)) {|s| s.process(transform) }
+            when :info then Sources::EXIFR.new(source)
+            else raise "Don't know how to do #{transform} transform."
+          end
+        end
+        
+        # Store the given source at the given URI.
+        def self.store(source, uri)
+          store = case uri.scheme
+#            when 'http', 'https' then Sources::Http.new(uri)   # Need ARes to pull this off...
+            when 'file' then Sources::File.new(uri)
+#            when 's3' then Sources::S3.new(uri)
+            when 'db' then Sources::ActiveRecord.new(uri)
+            else raise "Don't know how to store to #{uri}."
+          end
+          returning store do |s|
+            s.store(source)
+          end
+        end
+        
+        def initialize(d = nil, m = nil)
+          @data = d # Store primer data
+          @metadata = m || {} # Store primer metadata
         end
         
         def valid?
           error.nil?
         end
         
-        # Load the source data/metadata. 
-        def load!(full = true)
-          true
+        # =Metadata=
+        # Return a reasonable filename for this source
+        def filename
+          @metadata[:filename] || "attachment"
+        end
+        
+        # Return uri representing where this source is available.
+        def uri
+          ::URI.parse(filename)
         end
         
         # Return size of source in bytes.
         def size
-          data.size  
+          blob.size
         end
 
         # Return the MD5 digest of the source
         def digest
-          Digest::MD5.digest(data)
+          Digest::MD5.digest(blob)
         end
 
-        # Return available metadata.
+        # Return all available metadata.
         def metadata
-          returning Hash.new do |h|
-            h[:size] = size
-            h[:digest] = digest
+          returning @metadata do |h|
+#            h[:uri] = uri if uri
+            h[:filename] = filename if filename
+            h[:digest] = digest if digest
+            h[:size] = size if size
           end
         end
         
+        # =Data=
         # Return an IO-compatible instance with source's data.
         def io
-          StringIO.new(data || "", 'rb')
+          @io ||= StringIO.new(data, 'r+b')
         end
         
         # Return the source's data as a blob string
-        def data
-          ""
+        def blob
+#          ""
+          raise "No data available"
         end
         
-        # Return a Tempfile with source's data.
+        # Return a closed Tempfile of source's data.
         def tempfile
-          returning Tempfile.new(filename, GroupSmarts::Attach.tempfile_path) do |tmp|
+          returning ::Tempfile.new(filename, GroupSmarts::Attach.tempfile_path) do |tmp|
             tmp.binmode
-            tmp.write(data)
+            tmp.write(blob)
             tmp.close
           end          
-        end
-        
-        private
-        # Return a filename suitable for holding this source's data.
-        def filename
-          "#{'attachment'}#{rand Time.now.to_i}"
         end
       end
     end

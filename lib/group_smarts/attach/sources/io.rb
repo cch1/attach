@@ -3,26 +3,25 @@ module GroupSmarts # :nodoc:
     module Sources
       # Methods for IO-based sources.
       class IO < GroupSmarts::Attach::Sources::Base
-        # Squirrel away the source
-        def initialize(source)
-          super
-          @source = source
+        # =Metadata=
+        # Augment metadata hash
+        def metadata
+          returning super do |h|
+            h[:size] = size
+            h[:digest] = digest
+          end
         end
 
-        # Return size of source in bytes.
-        def size
-          @source.size  
-        end
-        
-        # Return the IO-like object that we are proxying.
+        # =Data=
+        # Returns the rewound IO instance that we are proxying.
         def io
-          @source
+          @data.rewind
+          @data
         end
         
-        # Return the source's data.  WARNING: Performance problems can result if the source is large, remote or both.
-        def data
-          @source.rewind
-          @source.read
+        # Returns the source's data as a blob string.  WARNING: Performance problems can result if the source is large
+        def blob
+          io.read
         end
       end
     end
