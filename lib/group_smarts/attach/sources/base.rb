@@ -73,6 +73,13 @@ module GroupSmarts # :nodoc:
           error.nil?
         end
         
+        # Destroy this source.
+        def destroy
+          @data = nil
+          @metadata = nil
+          freeze
+        end
+        
         # =Metadata=
         # Return a reasonable filename for this source
         def filename

@@ -19,7 +19,8 @@ module GroupSmarts # :nodoc:
 
         # Destroy this source/sink and return a new instance of the base source.
         def destroy
-          # Nothing to do: ActiveRecord association's :dependent option takes care of cleaning up blob.
+          super
+          # Nothing further to do: ActiveRecord association's :dependent option takes care of cleaning up blob.
         end
         
         # =Metadata=
