@@ -9,30 +9,43 @@ module GroupSmarts # :nodoc:
           @source = source
         end
         
-        # Process this source with the given transformation.
+        # Process this source with the given transformation.  This source can only augment the metadata so we return ourself here.
         def process(transform)
-          print "Transforming with #{transform}\n"
+          self
         end
 
         # =Metadata=        
+        def mime_type
+          @source.mime_type
+        end
+        
+        def filename
+          @source.filename
+        end
+        
+        def uri
+          @source.uri
+        end
+        
         def metadata
           returning super do |h|
-            h[:height] = image.height
-            h[:width] = image.width
+            h[:height] = image.height if image.height
+            h[:width] = image.width if image.width
+            h[:time] = image.date_time if image.date_time
           end
         end
         
         # =Data=
         # Return the source's data.
-        def data
-          @source.data
+        def blob
+          @source.blob
         end
 
         private        
         def image
-          @image ||= case @source.mime_type
-            when ::Mime::Type.lookup('image/jpeg') then ::EXIFR::JPEG.new(@source.io)
-            else raise "Can't process source with MIME type #{@source.mime_type}."
+          @image ||= case mime_type.to_sym
+            when :jpg, :tif then ::EXIFR::JPEG.new(@source.io)
+            else raise "Can't process source with MIME type #{mime_type}."
           end
         end
       end

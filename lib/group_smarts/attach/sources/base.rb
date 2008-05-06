@@ -43,9 +43,13 @@ module GroupSmarts # :nodoc:
             when :iconify then Sources::Http.new(::URI.parse('http://www.iconspedia.com/uploads/1537420179.png'))
 #              when :thumbshot then Source::Thumbshooter.new(source).process()
 #              when :sample then Source::MPEGSampler.new(source).process()
-            when :info, :thumbnail, :vignette, :proof, :max
+            when :thumbnail, :vignette, :proof, :max
               returning(Sources::Rmagick.new(source)) {|s| s.process(transform) }
-            when :info then Sources::EXIFR.new(source)
+            when :info
+              case source.mime_type.to_sym
+                when :jpg, :tiff then Sources::EXIFR.new(source).process(transform)
+                else source # No additional information available.
+              end
             else raise "Don't know how to do #{transform} transform."
           end
         end
@@ -81,14 +85,19 @@ module GroupSmarts # :nodoc:
         end
         
         # =Metadata=
+        # Return ::URI representing where this source is available.
+        def uri
+          nil
+        end
+        
+        # Return the ::Mime::Type for this this attachment.
+        def mime_type
+          @metadata[:mime_type]
+        end
+        
         # Return a reasonable filename for this source
         def filename
           @metadata[:filename] || "attachment"
-        end
-        
-        # Return uri representing where this source is available.
-        def uri
-          ::URI.parse(filename)
         end
         
         # Return size of source in bytes.
@@ -104,7 +113,8 @@ module GroupSmarts # :nodoc:
         # Return all available metadata.
         def metadata
           returning @metadata do |h|
-#            h[:uri] = uri if uri
+            #  This represents the minimal set of attribute methods that should be available in every subclass.
+            h[:mime_type] = mime_type if mime_type
             h[:filename] = filename if filename
             h[:digest] = digest if digest
             h[:size] = size if size
@@ -114,13 +124,12 @@ module GroupSmarts # :nodoc:
         # =Data=
         # Return an IO-compatible instance with source's data.
         def io
-          @io ||= StringIO.new(data, 'r+b')
+          @io ||= StringIO.new(blob, 'r+b')
         end
         
         # Return the source's data as a blob string
         def blob
-#          ""
-          raise "No data available"
+          nil
         end
         
         # Return a closed Tempfile of source's data.

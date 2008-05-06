@@ -16,13 +16,6 @@ module GroupSmarts # :nodoc:
           @uri ||= BASE_URI.merge(URI.encode(@file.path)).normalize
         end
 
-        # Augment metadata hash
-        def metadata
-          returning super do |h|
-#            h[:uri] = uri
-          end
-        end
-        
         # =Data=
         # Returns a closed Tempfile of source's data.
         def tempfile

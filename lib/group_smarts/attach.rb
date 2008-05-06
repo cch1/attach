@@ -77,7 +77,7 @@ module GroupSmarts # :nodoc:
           
           has_one :attachment_blob, :dependent => :destroy if ::AttachmentBlob
 
-          before_validation :process_source
+          before_validation :process!
           before_validation :choose_storage
           before_save :save_source
           before_save :evaluate_custom_callbacks
@@ -109,6 +109,7 @@ module GroupSmarts # :nodoc:
 
       # Performs common validations for attachment models.
       def validates_as_attachment
+        validates_presence_of   :filename, :if => :local?
         validates_presence_of   :content_type
         validate                :valid_content_type?
         validates_presence_of   :uri
@@ -148,12 +149,12 @@ module GroupSmarts # :nodoc:
         %w(file db s3).include?(uri && uri.scheme)
       end
       
-      # Return a filename for the attachment
-      def filename
-        #uri.path.split('/')[-1] || 'attachment'
-        self[:filename] || [id, aspect, mime_type.to_sym].compact.join('_')
-      end
-
+#      # Return a filename for the attachment
+#      def filename
+#        #uri.path.split('/')[-1] || 'attachment'
+#        self[:filename] || [id, aspect, mime_type.to_sym].compact.join('_')
+#      end
+#
       # Returns the width/height in a suitable format for the image_tag helper: (100x100)
       def image_size
         [metadata[:width].to_s, metadata[:height].to_s] * 'x' if metadata && metadata[:width] && metadata[:height]
@@ -196,7 +197,7 @@ module GroupSmarts # :nodoc:
         self.metadata = src.metadata.reject{|k,v| a[k] = v if respond_to?(k)}
         self.attributes = a
         @source = src
-        @_aspects ||= attachment_options[:_aspects].dup || []
+        @_aspects ||= attachment_options[:_aspects].dup || [] # Unless overridden, we need to update the aspects now that the source has changed.
       end
       
       # Allows you to work with a processed representation (RMagick, ImageScience, etc) of the attachment in a block.
@@ -210,7 +211,7 @@ module GroupSmarts # :nodoc:
         yield source.image
       end
 
-      # Returns an array of aspects to be built for this attachment.
+      # Returns the array of aspects to be built for this attachment.
       def _aspects
         @_aspects ||= []
       end
@@ -222,9 +223,8 @@ module GroupSmarts # :nodoc:
       
       # Setter for URI.  Accepts a string representation of a URI, or a ::URI instance.
       def uri=(u)
-        @uri = u.kind_of?(::URI) ? u : ::URI.parse(u).normalize
-        write_attribute(:uri, @uri.to_s)
-        @uri
+        @uri = u && (u.kind_of?(::URI) ? u : ::URI.parse(u).normalize)
+        @uri && write_attribute(:uri, @uri.to_s)
       end
       
       # Getter for MIME type.  Returns an instance of Mime::Type
@@ -236,9 +236,8 @@ module GroupSmarts # :nodoc:
       def mime_type=(mt)
         # TODO: Scrap the ability to read a string -that's what the built-in setter on content_type is for.
         # TODO: Convert this to a composed_of macro? 
-        @mime_type = mt.kind_of?(Mime::Type) ? mt : Mime::Type.lookup(mt)
-        write_attribute(:content_type, @mime_type.to_s)
-        @mime_type
+        @mime_type = mt && (mt.kind_of?(Mime::Type) ? mt : Mime::Type.lookup(mt))
+        @mime_type && write_attribute(:content_type, @mime_type.to_s)
       end
       
       # Return the raw data (blob) of this attachment
@@ -270,7 +269,7 @@ module GroupSmarts # :nodoc:
         end
 
         # Process the source and load the resulting metadata.
-        def process_source
+        def process!
           self.source = Sources::Base.process(source, required_processing) if source.valid? && required_processing
           true
         end
@@ -313,7 +312,7 @@ module GroupSmarts # :nodoc:
         end
 
         # Store the attachment to the backend, if required, and trigger associated callbacks.
-        # Sources are saved to the location identified by the store variable
+        # Sources are saved to the location identified by the uri attribute if the store attribute is set.
         def save_source
           if store && uri.host == 'localhost'
              @store = nil # Indicate that no further storage is necessary.

@@ -11,6 +11,8 @@ module GroupSmarts # :nodoc:
         def initialize(source)
           super
           @source = source
+          @uri = @source.uri
+          @blob = @source.blob
         end
         
         # Process this source with the given transformation, which must be a Geometry object.
@@ -19,10 +21,10 @@ module GroupSmarts # :nodoc:
             when :thumbnail, :vignette, :proof, :max
               image.change_geometry(StandardImageGeometry[transform.to_sym]) { |cols, rows, image| image.resize!(cols, rows) }
               @aspect = transform.to_s
-            when :info  # Read-only manipulation so we need to defer the original source for some of the metadata 
-              @image = ::Magick::Image.ping(@source.tempfile.path).first
-              @blob = @source.blob
-              @uri = @source.uri
+              @uri = nil # Once transformed, all external sources are invalid.
+              @blob = nil # Once transformed, we need to reset the data.  Now the getter can lazily load the blob.
+              self
+            else raise "Don't know how to do the #{transform} transformation" 
           end
         end
 
@@ -45,15 +47,13 @@ module GroupSmarts # :nodoc:
         
         # Return content type of source as a string.
         def mime_type
-          image.mime_type
+          ::Mime::Type.lookup(image.mime_type)
         end
         
         def metadata
           returning super.merge(exif_data) do |h|
-            h[:filename] = filename
             h[:height] = image.rows
             h[:width] = image.columns
-            h[:mime_type] = mime_type
           end
         end
         
@@ -71,7 +71,7 @@ module GroupSmarts # :nodoc:
           end
         end
         
-        def image(method = :read)
+        def image
           @image ||= ::Magick::Image.read(@source.tempfile.path).first
         end
 

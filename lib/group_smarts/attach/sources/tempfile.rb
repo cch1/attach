@@ -22,17 +22,8 @@ module GroupSmarts # :nodoc:
         
         # Returns the MIME::Type of source.
         def mime_type
-          @mime_type ||= @tempfile.respond_to?(:content_type) ? @tempfile.content_type : Mime::Type.lookup_by_extension(filename.split('.')[-1])
+          @mime_type ||= @tempfile.respond_to?(:content_type) ? ::Mime::Type.lookup(@tempfile.content_type) : Mime::Type.lookup_by_extension(filename.split('.')[-1])
         end
-        
-        # Augment metadata
-        def metadata
-          returning super do |h|
-#            h[:uri] = uri
-            h[:mime_type] = mime_type if mime_type
-            h[:filename] = filename if filename
-          end          
-        end        
         
         # =Data=
         # Returns the source's data as a blob string.  WARNING: Performance problems can result if the source is large

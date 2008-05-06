@@ -56,16 +56,6 @@ module GroupSmarts # :nodoc:
           Base64.decode64(response['Content-MD5']) if response['Content-MD5']
         end
         
-        # Augment metadata hash
-        def metadata
-          returning super do |h|
-            h[:filename] = filename
-            h[:mime_type] = mime_type
-            h[:digest] = digest
-            h[:size] = size
-          end
-        end
-        
         # =Data=
         # Return data from remote source as a blob string
         def blob

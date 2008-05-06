@@ -4,14 +4,16 @@ module GroupSmarts # :nodoc:
       # Methods for IO-based sources.
       class IO < GroupSmarts::Attach::Sources::Base
         # =Metadata=
-        # Augment metadata hash
-        def metadata
-          returning super do |h|
-            h[:size] = size
-            h[:digest] = digest
-          end
+        # Returns a file name suitable for this source when saved in a persistent file.
+        def filename
+          @data.respond_to?(:original_filename) && @data.original_filename
         end
-
+        
+        # Returns the MIME::Type of source.
+        def mime_type
+          @mime_type ||= @data.respond_to?(:content_type) && ::Mime::Type.lookup(@tempfile.content_type)
+        end
+        
         # =Data=
         # Returns the rewound IO instance that we are proxying.
         def io
