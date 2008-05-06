@@ -29,9 +29,10 @@ module GroupSmarts # :nodoc:
         
         def metadata
           returning super do |h|
+            h.reverse_merge!(image.exif.to_hash) if image.exif?
             h[:height] = image.height if image.height
             h[:width] = image.width if image.width
-            h[:time] = image.date_time if image.date_time
+            h[:time] = h.delete(:date_time_original) || h.delete(:date_time)
           end
         end
         
