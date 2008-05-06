@@ -297,7 +297,6 @@ module GroupSmarts # :nodoc:
             raise(AspectError.new("Can't create an aspect of an aspect")) unless parent_id.nil?
             returning aspects.find_or_initialize_by_aspect(name.to_s) do |_aspect|
               _aspect.attributes = attributes.merge!({:attachee => attachee, :_aspects => {}})
-              callback :before_aspect_saved
               _aspect.save!
             end
           end
@@ -311,7 +310,6 @@ module GroupSmarts # :nodoc:
           if store && uri.host == 'localhost'
              @store = nil # Indicate that no further storage is necessary.
             self.source = Sources::Base.store(source, uri)
-            callback :after_attachment_saved
           end
         end
 
