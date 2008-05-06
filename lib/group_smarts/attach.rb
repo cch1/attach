@@ -60,10 +60,10 @@ module GroupSmarts # :nodoc:
         # only need to define these once on a class
         unless included_modules.include?(InstanceMethods)
           attr_accessor :resize
-          attr_accessor :store  # indicates where to store attachment data.  Set to false to not store data and instead use a remote reference
-          attr_writer :_aspects # Array of aspects to create.
+          attr_accessor :store  # indicates whether or not to store attachment data.  Set to false to not store data and instead use a remote reference
+          attr_writer :_aspects # Array or Hash of aspects to create.  Set to an empty array to not create any aspects.
 
-          attachment_options[:store] ||= 'db://localhost/db_file/%s'
+          attachment_options[:store] ||= 'db://localhost/attachment_blobs/%s'
           attachment_options[:path_prefix] ||= attachment_options[:file_system_path]
           if attachment_options[:path_prefix].nil?
             attachment_options[:path_prefix] = attachment_options[:store] == :s3 ? table_name : File.join("public", table_name)
@@ -113,7 +113,8 @@ module GroupSmarts # :nodoc:
         validate                :valid_content_type?
         validates_presence_of   :uri
         validate                :valid_uri?
-#        validates_inclusion_of  :size, :in => attachment_options[:size], :if => Proc.new{|r| r.local?}
+        validate                :valid_source?
+        validates_inclusion_of  :size, :in => attachment_options[:size], :if => :local?
       end
 
       # Returns true or false if the given content type is recognized as an image.
@@ -260,20 +261,27 @@ module GroupSmarts # :nodoc:
             errors.add(:uri, "Can't be parsed") # Require that the string representation be parseable.
           end
         end
-
-        # Process the source and load the resulting metadata.  If it's invalid, stop the validation chain.
-        def process_source
-          self.source = Sources::Base.process(source, required_processing) if source.valid? && required_processing
+        
+        # Ensure source is valid, and if not, update the ActiveRecord errors object with the source error.
+        def valid_source?
           returning source.valid? do |valid|
             errors.add_to_base(source.error) unless valid
-          end
+          end          
+        end
+
+        # Process the source and load the resulting metadata.
+        def process_source
+          self.source = Sources::Base.process(source, required_processing) if source.valid? && required_processing
+          true
         end
         
         # Returns true if the original attachment or any of its aspects require data for processing (best guess) or storing.
+        # Manually defined _aspects (via attribute) are assumed to not require data for processing unless the store attribute is also set.
         def data_required?
-          store || _aspects.any? do |a|
-            [:thumbnail, :icon, :proof].include?(a)
-          end && image?
+          store || image? && _aspects.any? do |a|
+            name, attributes = *a
+            attributes.nil? ? [:thumbnail, :icon, :proof].include?(name) : attributes[:store]
+          end
         end
       
         # Returns the processing required for the attachment.

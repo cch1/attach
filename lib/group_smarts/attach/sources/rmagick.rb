@@ -88,7 +88,7 @@ module GroupSmarts # :nodoc:
 
         # Extract useful information from (ExiF | IPTC) header, if possible.  
         def exif_data
-          returning Hash.new do |data|
+          @exif_data ||= returning Hash.new do |data|
             begin
               if (timestamp = (image.get_exif_by_entry('DateTime').first.last || image.get_exif_by_entry('DateTimeOriginal').first.last))
                 # Replace colons and forward slashes in the first (date) portion of the string with dashes.
