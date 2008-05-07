@@ -197,6 +197,7 @@ module GroupSmarts # :nodoc:
         self.metadata = src.metadata.reject{|k,v| a[k] = v if respond_to?(k)}
         self.attributes = a
         @source = src
+        @source_updated = true
         @_aspects ||= attachment_options[:_aspects].dup || [] # Unless overridden, we need to update the aspects now that the source has changed.
       end
       
@@ -268,7 +269,7 @@ module GroupSmarts # :nodoc:
           end          
         end
 
-        # Process the source and load the resulting metadata.
+        # Process the source and load the resulting metadata.  No processing of the primary attachment should impede the creation of aspects.
         def process!
           self.source = Sources::Base.process(source, required_processing) if source.valid? && required_processing
           true
@@ -286,22 +287,23 @@ module GroupSmarts # :nodoc:
         # Returns the processing required for the attachment.
         def required_processing
           p ||= resize if store && image?
-          p ||= (image? ? aspect : :iconify) if aspect && store
-          p ||= :info if !aspect && data_required?     # Opportunistically extract bonus metadata from "primary" attachments if the source's data is/will be required.
-          @processing || p
+          p ||= (image? ? aspect : :iconify) if aspect
+          p ||= :info if !aspect && data_required?     # Opportunistically extract bonus metadata for original attachment if the source data is/will be required.
+          @processing || @source_updated && p
         end
       
-        # Choose the storage URI.  Done early so that it may be validated and allow attachment data blobs to store before or after main attachment record.
+        # Choose the storage URI.  Done early so that it may be validated and allow attachment data blobs to be stored before or after main attachment record.
         def choose_storage
-          self.uri = store ? ::URI.parse(attachment_options[:store] % uuid!) : source.uri
+          self.uri = source.uri unless store
+          self.uri ||= ::URI.parse(attachment_options[:store] % uuid!)
         end
         
         # Create additional child attachments for each requested aspect.
         def create_aspects
           _aspects.each do |a|
-            name, attributes = *a
-            attributes ||= {:source => Sources::Base.load(source.blob.dup, source.metadata.dup), :store => true}
             raise(AspectError.new("Can't create an aspect of an aspect")) unless parent_id.nil?
+            name, attributes = *a
+            attributes ||= {:source => source}
             returning aspects.find_or_initialize_by_aspect(name.to_s) do |_aspect|
               _aspect.attributes = attributes.merge!({:attachee => attachee, :_aspects => {}})
               _aspect.save!
@@ -314,8 +316,8 @@ module GroupSmarts # :nodoc:
         # Store the attachment to the backend, if required, and trigger associated callbacks.
         # Sources are saved to the location identified by the uri attribute if the store attribute is set.
         def save_source
-          if store && uri.host == 'localhost'
-             @store = nil # Indicate that no further storage is necessary.
+          if @source_updated && uri.host == 'localhost'
+             @source_updated = nil # Indicate that no further storage is necessary.
             self.source = Sources::Base.store(source, uri)
           end
         end
