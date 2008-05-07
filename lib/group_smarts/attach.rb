@@ -174,12 +174,14 @@ module GroupSmarts # :nodoc:
       #   @attachment = Attachment.create! params[:attachment]
       #
       # TODO: Allow it to work with Merb tempfiles too.
-      def file=(file_data)
+      def file=(upload)
+        return unless upload
         self.store = true if store.nil?
-        self.source = Sources::Base.load(file_data)
+        self.source = Sources::Base.load(upload)
       end
       
       def url=(u)
+        return unless u
         self.store = false if store.nil?
         self.source = Sources::Base.load(::URI.parse(u))
       end
