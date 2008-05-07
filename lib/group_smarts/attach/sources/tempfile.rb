@@ -11,8 +11,7 @@ module GroupSmarts # :nodoc:
         # =Metadata=
         # Returns the URI of the source.
         def uri
-          path = URI.encode(@tempfile.respond_to?(:local_path) ? @tempfile.local_path : @tempfile.path)
-          @uri ||= BASE_URI.merge(path)
+          nil
         end
         
         # Returns a file name suitable for this source when saved in a persistent file.
