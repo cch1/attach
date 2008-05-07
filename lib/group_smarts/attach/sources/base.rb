@@ -28,10 +28,11 @@ module GroupSmarts # :nodoc:
                 else raise "Source for scheme '#{raw_source.scheme}' not supported."
               end
             when File then Sources::File.new(raw_source, metadata)
-            when Tempfile, ActionController::TestUploadedFile then Sources::Tempfile.new(raw_source, metadata)
+            when Tempfile then Sources::Tempfile.new(raw_source, metadata)
             when IO then Sources::IO.new(raw_source, metadata)
             when String then Sources::Blob.new(raw_source, metadata)
             when nil then self.new
+            when ::ActionController::TestUploadedFile then Sources::Tempfile.new(raw_source, metadata)
             else raise "Don't know how to load #{raw_source.class}."
           end
         end
