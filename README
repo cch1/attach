@@ -2,168 +2,65 @@ attach
 =====================
 
 attach is a plugin by Chris Hapgood.  It evolved from Rick Olson's attachment_fu, but is substantially changed to
+
 	a. Support local and remote attachments.
-	b. Abstract the concept of filename into a URI
+	b. Abstract the concept storage into a URI
 	c. Support higher order abstractions for content_type (::Mime::Type).
-	d. Encapsulate the attachment source into the state pattern (encompassing the null/remote/loaded/processed and eventually stored phases of an attachment.)
+	d. Encapsulate the attachment source into the state pattern (encompassing the null, remote/loaded, processed and stored phases of an attachment.)
 	e. Remove support for s3 and filesystem backends.  These are likely to be easily reinstated, but for now...
 	f. Remove support for image_science and mini_magick processors.  Again, these are likely to be easily reinstated, but for now...
+	g. Add support for the EXIFR gem to extract extensive metadata from JPEG and TIFF files.
+	
+Attributes required of any model that includes the Attach plugin are:
+	:uri			*an absolute URI identifying the location of the attachment (formerly url in some early versions)
+	:content_type	*valid MIME type string
+	:digest			the MD5 hash of the attachment data, not encoded
+	:size			the size of the attachment data
+	:aspect			identifier of alternate views of the original attachment (formerly thumbnail, in earlier versions and AttachmentFu)
+	:filename		a reasonable filename to suggest to anyone downloading the attachment.  Useful for the alt property of img tags.
+	:metadata		a YAML serialized hash of additional metadata (width, camera model, date picture taken, etc.)
+	:description	a description of the attachment.
+	:parent_id		foreign key referencing the attachment to which an aspect refers.
+	:attachee_id	foreign key id referencing the owner of the attachment
+	:attachee_type	foreign key type referencing the owner of the attachment
 
---------------- Original attachment_fu README -------------------
+The :aspect attribute deserves special attention.  It is intended to hold a short string that identifies an alternate view of an attachment.  In the case of image
+attachments, :aspect would typically be one of "thumbnail", "vignette", "icon", "proof", etc.  For other types of attachments, :aspect might be "thumbshot", 
+"summary", "still", "trailer", etc.  For a given application, there would typically be an agreed convention on the list of valid aspects.
 
-attachment_fu functionality
-===========================
+Features of Attach-enabled models:
+=======================
+Sources can be automatically processed for both uploaded files (HTML multipart forms) and URI-referenced remote attachments.  
 
-attachment_fu facilitates file uploads in Ruby on Rails.  There are a few storage options for the actual file data, but the plugin always at a minimum stores metadata for each file in the database.
+Uploaded files (passed using the :file virtual attribute) are stored locally and processed to extract the size and digest attributes (in
+the case of images, additional metadata is also extracted, including EXIF headers).
 
-There are three storage options for files uploaded through attachment_fu:
-  File system
-  Database file
-  Amazon S3
+URI-referenced attachments (using the :url virtual attribute) are handled differently based on the :store virtual attribute.  If :store is not specified or 
+true, the referenced document is automatically downloaded, processed to extract metadata and stored.  If :store is false, the document is probed (with a HEAD
+request) to determine the :size, :content_type and possibly :digest attributes.  If :store is false but aspects are required to be built (as is the case for 
+images), the remote document will be downloaded for processing of aspects but not stored.  More complete attributes/metadata are opportunistically extracted in
+this case.
 
-Each method of storage many options associated with it that will be covered in the following section.  Something to note, however, is that the Amazon S3 storage requires you to modify config/amazon_s3.yml and the Database file storage requires an extra table.
+Image attachments are automatically resized to a :max size they exceed the given size limits.  (More documentation needed).
 
+Automatic aspect creation is controlled by the :_aspects virtual attribute.  Typically it is set to an array of standardized aspect names.  The :_aspects 
+attribute can also be set to a hash where the keys are aspect names and the values are a hash of attributes to be assigned manually to the aspect.  Finally, 
+setting the :_aspects virtual attribute to false will ensure no aspects are built.  By default, :_aspects is set to [:thumbnail], which results in a 
+single 128x128 :thumbnail aspect being built for image attachments.
 
-attachment_fu models
-====================
+TODO:
+	1. Generate thumbshot aspects for web page content types (HTML, XHTML)
+ 	2. Generate icon aspects for application content types (xls, word, etc.)
+ 	3. Restore Amazon S3 and file system storage capability
+	4. Restore alternate processor capability.
+ 	4. Support DRB-based background processing for expensive transforms
 
-For all three of these storage options a table of metadata is required.  This table will contain information about the file (hence the 'meta') and its location.  This table has no restrictions on naming, unlike the extra table required for database storage, which must have a table name of db_files (and by convention a model of DbFile).
-  
-In the model there are two methods made available by this plugins: has_attachment and validates_as_attachment.
+Limitations
+=====================
+a. Declaration of "image" content types is weak and not documented.
+b. URI-based sources are probed using a HEAD request, and then depending of need, entirely fetched with a GET request.  It is not generally 
+possible to know in advance if the document body will be required without reading the headers (notably, to get the size and content type).  
+Technically, cleanly reading the header on a GET and subsequently not downloading the body is possible, but its execution is beyond the
+scope of this initial implementation.  The expedient solution (a HEAD followed by a GET) is used.  
+c. Declaration of standard processing-by-aspect is weak and not well documented.
 
-has_attachment(options = {})
-  This method accepts the options in a hash:
-    :content_type     # Allowed content types.
-                      # Allows all by default.  Use :image to allow all standard image types.
-    :min_size         # Minimum size allowed.
-                      # 1 byte is the default.
-    :max_size         # Maximum size allowed.
-                      # 1.megabyte is the default.
-    :size             # Range of sizes allowed.
-                      # (1..1.megabyte) is the default.  This overrides the :min_size and :max_size options.
-    :resize_to        # Used by RMagick to resize images.
-                      # Pass either an array of width/height, or a geometry string.
-    :thumbnails       # Specifies a set of thumbnails to generate.
-                      # This accepts a hash of filename suffixes and RMagick resizing options.
-                      # This option need only be included if you want thumbnailing.
-    :thumbnail_class  # Set which model class to use for thumbnails.
-                      # This current attachment class is used by default.
-    :path_prefix      # path to store the uploaded files.
-                      # Uses public/#{table_name} by default for the filesystem, and just #{table_name} for the S3 backend.  
-                      # Setting this sets the :storage to :file_system.
-    :storage          # Specifies the storage system to use..
-                      # Defaults to :db_file.  Options are :file_system, :db_file, and :s3.
-    :processor        # Sets the image processor to use for resizing of the attached image.
-                      # Options include ImageScience, Rmagick, and MiniMagick.  Default is whatever is installed.
-    
-
-  Examples:
-    has_attachment :max_size => 1.kilobyte
-    has_attachment :size => 1.megabyte..2.megabytes
-    has_attachment :content_type => 'application/pdf'
-    has_attachment :content_type => ['application/pdf', 'application/msword', 'text/plain']
-    has_attachment :content_type => :image, :resize_to => [50,50]
-    has_attachment :content_type => ['application/pdf', :image], :resize_to => 'x50'
-    has_attachment :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
-    has_attachment :storage => :file_system, :path_prefix => 'public/files'
-    has_attachment :storage => :file_system, :path_prefix => 'public/files', 
-                   :content_type => :image, :resize_to => [50,50]
-    has_attachment :storage => :file_system, :path_prefix => 'public/files',
-                   :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
-    has_attachment :storage => :s3
-
-validates_as_attachment
-  This method prevents files outside of the valid range (:min_size to :max_size, or the :size range) from being saved.  It does not however, halt the upload of such files.  They will be uploaded into memory regardless of size before validation.
-  
-  Example:
-    validates_as_attachment
-
-
-attachment_fu migrations
-========================
-
-Fields for attachment_fu metadata tables...
-  in general:
-    size,         :integer  # file size in bytes
-    content_type, :string   # mime type, ex: application/mp3
-    filename,     :string   # sanitized filename
-  that reference images:
-    height,       :integer  # in pixels
-    width,        :integer  # in pixels
-  that reference images that will be thumbnailed:
-    parent_id,    :integer  # id of parent image (on the same table, a self-referencing foreign-key).
-                            # Only populated if the current object is a thumbnail.
-    thumbnail,    :string   # the 'type' of thumbnail this attachment record describes.  
-                            # Only populated if the current object is a thumbnail.
-                            # Usage:
-                            # [ In Model 'Avatar' ]
-                            #   has_attachment :content_type => :image, 
-                            #                  :storage => :file_system, 
-                            #                  :max_size => 500.kilobytes,
-                            #                  :resize_to => '320x200>',
-                            #                  :thumbnails => { :small => '10x10>',
-                            #                                   :thumb => '100x100>' }
-                            # [ Elsewhere ]
-                            # @user.avatar.thumbnails.first.thumbnail #=> 'small'
-  that reference files stored in the database (:db_file):
-    db_file_id,   :integer  # id of the file in the database (foreign key)
-    
-Field for attachment_fu db_files table:
-  data, :binary # binary file data, for use in database file storage
-
-
-attachment_fu views
-===================
-
-There are two main views tasks that will be directly affected by attachment_fu: upload forms and displaying uploaded images.
-
-There are two parts of the upload form that differ from typical usage.
-  1. Include ':multipart => true' in the html options of the form_for tag.
-    Example:
-      <% form_for(:attachment_metadata, :url => { :action => "create" }, :html => { :multipart => true }) do |form| %>
-      
-  2. Use the file_field helper with :uploaded_data as the field name.
-    Example:
-      <%= form.file_field :uploaded_data %>
-
-Displaying uploaded images is made easy by the public_filename method of the ActiveRecord attachment objects using file system and s3 storage.
-
-public_filename(thumbnail = nil)
-  Returns the public path to the file.  If a thumbnail prefix is specified it will return the public file path to the corresponding thumbnail.
-  Examples:
-    attachment_obj.public_filename          #=> /attachments/2/file.jpg
-    attachment_obj.public_filename(:thumb)  #=> /attachments/2/file_thumb.jpg
-    attachment_obj.public_filename(:small)  #=> /attachments/2/file_small.jpg
-
-When serving files from database storage, doing more than simply downloading the file is beyond the scope of this document.
-
-
-attachment_fu controllers
-=========================
-
-There are two considerations to take into account when using attachment_fu in controllers.
-
-The first is when the files have no publicly accessible path and need to be downloaded through an action.
-
-Example:
-  def readme
-    send_file '/path/to/readme.txt', :type => 'plain/text', :disposition => 'inline'
-  end
-  
-See the possible values for send_file for reference.
-
-
-The second is when saving the file when submitted from a form.
-Example in view:
- <%= form.file_field :attachable, :uploaded_data %>
-
-Example in controller:
-  def create
-    @attachable_file = AttachmentMetadataModel.new(params[:attachable])
-    if @attachable_file.save
-      flash[:notice] = 'Attachment was successfully created.'
-      redirect_to attachable_url(@attachable_file)     
-    else
-      render :action => :new
-    end
-  end
