@@ -146,7 +146,7 @@ module GroupSmarts # :nodoc:
       # Returns predicate based on attachment being hosted locally (will be stored locally or already stored locally)
       # OPTIMIZE: Consider having this be a method on source for encapsulation.
       def local?
-        %w(file db s3).include?(uri && uri.scheme)
+        uri && %w(file db s3).include?(uri.scheme)
       end
       
 #      # Return a filename for the attachment
@@ -160,7 +160,7 @@ module GroupSmarts # :nodoc:
         [metadata[:width].to_s, metadata[:height].to_s] * 'x' if metadata && metadata[:width] && metadata[:height]
       end
 
-      # nil placeholder in case this field is used in a form.
+      # Getter for file virtual attribute for consistency with setter.  Useful in case this field is used in a form.
       def file() nil; end
 
       # This method handles the uploaded file object.  If you set the field name to file, you don't need
@@ -180,6 +180,12 @@ module GroupSmarts # :nodoc:
         self.source = Sources::Base.load(upload)
       end
       
+      # Getter for url virtual attribute for consistency with setter.  Useful in case this field is used in a form.
+      def url
+        local? ? nil : uri.to_s
+      end
+
+      # Setter for virtual url attribute used to reference external data sources.
       def url=(u)
         return unless u
         self.store = false if store.nil?
