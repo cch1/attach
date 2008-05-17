@@ -32,8 +32,12 @@ module GroupSmarts # :nodoc:
             when IO then Sources::IO.new(raw_source, metadata)
             when String then Sources::Blob.new(raw_source, metadata)
             when nil then self.new
-            when ::ActionController::TestUploadedFile then Sources::Tempfile.new(raw_source, metadata)
-            else raise "Don't know how to load #{raw_source.class}."
+            else
+              if defined?(::ActionController::TestUploadedFile) and raw_source.is_a?(::ActionController::TestUploadedFile)
+                Sources::Tempfile.new(raw_source, metadata)
+              else
+                raise "Don't know how to load #{raw_source.class}."
+              end
           end
         end
         
