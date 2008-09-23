@@ -324,7 +324,7 @@ module GroupSmarts # :nodoc:
               _aspect.save!
             end
           end
-          @_aspects.clear
+          _aspects.clear
           true
         end
 
