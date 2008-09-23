@@ -11,6 +11,8 @@ module GroupSmarts # :nodoc:
       #   data            : A blob (string) of the attachment's data
       #   tempfile        : A tempfile of the attachment
       class Base
+        AvailableImageProcessing = Sources::Rmagick::StandardImageGeometry.keys
+        
         attr_reader :error, :data
         
         # Loads data from a primary source with bonus/primer metadata.  Primary sources can be either rich sources (capable of supplying raw 
@@ -48,7 +50,7 @@ module GroupSmarts # :nodoc:
             when :iconify then Sources::Http.new(::URI.parse('http://www.iconspedia.com/uploads/1537420179.png'))
 #              when :thumbshot then Source::Thumbshooter.new(source).process()
 #              when :sample then Source::MPEGSampler.new(source).process()
-            when :thumbnail, :vignette, :proof, :max
+            when *Sources::Rmagick::StandardImageGeometry.keys
               returning(Sources::Rmagick.new(source)) {|s| s.process(transform) }
             when :info
               case source.mime_type.to_sym

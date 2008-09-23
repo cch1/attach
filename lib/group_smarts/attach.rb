@@ -222,6 +222,7 @@ module GroupSmarts # :nodoc:
 
       # Returns the array of aspects to be built for this attachment.
       def _aspects
+        return [] if parent
         @_aspects ||= []
       end
       
@@ -288,16 +289,22 @@ module GroupSmarts # :nodoc:
         def data_required?
           store || image? && _aspects.any? do |a|
             name, attributes = *a
-            attributes.nil? ? [:thumbnail, :icon, :proof].include?(name) : attributes[:store]
+            attributes.nil? ? Sources::Base::AvailableImageProcessing.include?(name) : attributes[:store]
           end
         end
       
         # Returns the processing required for the attachment.
         def required_processing
-          p ||= resize if store && image?
-          p ||= (image? ? aspect : :iconify) if aspect
-          p ||= :info if !aspect && data_required?     # Opportunistically extract bonus metadata for original attachment if the source data is/will be required.
-          @processing || @source_updated && p
+          @processing || @source_updated && case
+            when store && image? && resize
+              resize
+            when aspect && image? && Sources::Base::AvailableImageProcessing.include?(aspect.to_sym)
+              aspect
+            when aspect && !image?
+              :iconify
+            when !aspect && data_required?     # Opportunistically extract bonus metadata for original attachment if the source data is/will be required.
+              :info
+          end
         end
       
         # Choose the storage URI.  Done early so that it may be validated and allow attachment data blobs to be stored before or after main attachment record.

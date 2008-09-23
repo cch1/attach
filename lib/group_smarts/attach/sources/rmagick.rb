@@ -17,15 +17,13 @@ module GroupSmarts # :nodoc:
         
         # Process this source with the given transformation, which must be a Geometry object.
         def process(transform)
-          case transform
-            when :thumbnail, :vignette, :proof, :max
-              image.change_geometry(StandardImageGeometry[transform.to_sym]) { |cols, rows, image| image.resize!(cols, rows) }
-              @aspect = transform.to_s
-              @uri = nil # Once transformed, all external sources are invalid.
-              @blob = nil # Once transformed, we need to reset the data.  Now the getter can lazily load the blob.
-              self
-            else raise "Don't know how to do the #{transform} transformation" 
-          end
+          t = StandardImageGeometry[transform.to_sym]
+          raise "Don't know how to do the #{transform} transformation" unless t 
+          image.change_geometry(t) { |cols, rows, image| image.resize!(cols, rows) }
+          @aspect = transform.to_s
+          @uri = nil # Once transformed, all external sources are invalid.
+          @blob = nil # Once transformed, we need to reset the data.  Now the getter can lazily load the blob.
+          self
         end
 
         # =Metadata=
