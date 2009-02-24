@@ -75,7 +75,7 @@ module GroupSmarts # :nodoc:
             m.belongs_to :parent, :class_name => base_class.to_s
           end
           
-          has_one :attachment_blob, :dependent => :destroy if ::AttachmentBlob
+          has_one :attachment_blob, :dependent => :destroy if AttachmentBlob.table_exists?
 
           before_validation :process!
           before_validation :choose_storage

@@ -1,5 +1,5 @@
-class AttachmentBlob < ActiveRecord::Base
-  belongs_to :attachment
+class GroupSmarts::Attach::AttachmentBlob < ActiveRecord::Base
+  belongs_to :attachment if table_exists?
 
   # Summarize blob data
   def inspect
