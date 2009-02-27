@@ -4,7 +4,7 @@ class ModelTest < ActiveSupport::TestCase
   fixtures :users, :attachments, :attachment_blobs
   
   def teardown
-    FileUtils.rm_rf 'public/attachments'
+    FileUtils.rm_rf File.join(Rails.root, 'public', 'attachments')
   end
 
   def test_create_attachment_via_file_with_no_aspects

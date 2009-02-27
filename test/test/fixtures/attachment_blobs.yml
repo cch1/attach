@@ -1,6 +1,6 @@
 <%
 def fixture_data(name)
-  fn = File.join('test', 'fixtures', 'attachments', name)
+  fn = File.join(Rails.root, 'test', 'fixtures', 'attachments', name)
   data = File.open(fn,'rb').read
   "!binary | \n    #{[data].pack('m').gsub(/\n/,"\n    ")}"
 end
