@@ -6,7 +6,7 @@ module GroupSmarts # :nodoc:
         # =Metadata=
         # Returns a file name suitable for this source when saved in a persistent file.
         def filename
-          @data.respond_to?(:original_filename) && @data.original_filename
+          @data.respond_to?(:original_filename) ? @data.original_filename : super
         end
         
         # Returns the MIME::Type of source.
