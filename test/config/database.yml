@@ -20,4 +20,4 @@ mysql: &mysql
   password: 
   database: attach_test
 test:
-  <<: *<%= ENV['DB'] || 'sqlite3_memory' %>
+  <<: *<%= ENV['DB'] || 'mysql' %>
