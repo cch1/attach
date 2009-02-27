@@ -2,17 +2,20 @@ require File.dirname(__FILE__) + '/test_helper.rb'
 
 class ModelTest < ActiveSupport::TestCase
   fixtures :users, :attachments, :attachment_blobs
+  
+  def teardown
+    FileUtils.rm_rf 'public/attachments'
+  end
 
   def test_create_attachment_via_file_with_no_aspects
     assert_difference 'Attachment.count' do
-      a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('binary/SperrySlantStar.bmp', 'image/bmp', :binary), :_aspects => [])
+      a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary), :_aspects => [])
       assert a.valid?, a.errors.full_messages.first
       assert_not_nil a.filename
       assert_equal 'SperrySlantStar.bmp', a.filename
       assert_not_nil a.digest
-      assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(a.digest).chomp!  # Base64.encode64(Digest::MD5.digest(File.read('test/fixtures/binary/SperrySlantStar.bmp'))).chomp!
+      assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(a.digest).chomp!  # Base64.encode64(Digest::MD5.digest(File.read('test/fixtures/attachments/SperrySlantStar.bmp'))).chomp!
       assert_equal 4534, a.size
-      assert_match %r(http:\/\/[\S]+\/media\/#{UUID_REGEXP}\/attachments\/#{UUID_REGEXP}.[\w]+), a.http_url
       assert a.aspects.empty?
 
       assert_not_nil a = Attachment.find(a.id)
@@ -34,26 +37,24 @@ class ModelTest < ActiveSupport::TestCase
 
   def test_create_system_attachment_via_file_with_default_aspect
     assert_difference 'Attachment.count', 2 do
-      a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('binary/SperrySlantStar.bmp', 'image/bmp', :binary), :system => true)
+      a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary))
       assert a.valid?, a.errors.full_messages.first
       assert users(:chris).attachments.first.valid?
-      assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(a.digest).chomp!  # Digest::MD5.digest(File.read('test/fixtures/binary/SperrySlantStar.bmp'))
+      assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(a.digest).chomp!  # Digest::MD5.digest(File.read('test/fixtures/attachments/SperrySlantStar.bmp'))
       assert_equal 4534, a.size
-      assert_match %r(http:\/\/[\S]+\/media\/#{UUID_REGEXP}\/attachments\/#{UUID_REGEXP}.[\w]+), a.http_url
     end
   end
 
   def test_create_attachment_via_file_with_explicit_aspects
     assert_difference 'Attachment.count', 2 do
-      a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('binary/AlexOnBMW#4.jpg', 'image/jpeg', :binary), :_aspects => [:thumbnail])
+      a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary), :_aspects => [:thumbnail])
       assert a.valid?, a.errors.full_messages.first
-      assert_equal 'NxzAvUsuKjk8tPhbnbgLjQ==', Base64.encode64(a.digest).chomp! # Base64.encode64(Digest::MD5.digest(File.read('test/fixtures/binary/AlexOnBMW#4.jpg')))
+      assert_equal 'NxzAvUsuKjk8tPhbnbgLjQ==', Base64.encode64(a.digest).chomp! # Base64.encode64(Digest::MD5.digest(File.read('test/fixtures/attachments/AlexOnBMW#4.jpg')))
       assert_equal "320x256", a.image_size
       assert_equal 25535, a.blob.size
       assert_equal 25535, a.size
       assert_equal 320, a.metadata[:width]
       assert_equal 256, a.metadata[:height]
-      assert_match %r(http:\/\/[\S]+\/media\/#{UUID_REGEXP}\/attachments\/#{UUID_REGEXP}.[\w]+), a.http_url
       assert_match %r(db:\/\/[\S]+\/#{UUID_REGEXP}), a.uri.to_s
       assert a.metadata.any?
       assert a.metadata.has_key?(:time)
@@ -99,7 +100,7 @@ class ModelTest < ActiveSupport::TestCase
 
   def test_create_attachment_via_url_with_aspect_file
     assert_difference 'Attachment.count', 2 do
-      a = Attachment.create(:attachee => users(:chris), :url => 'http://cho.hapgoods.com/wordpress/', :_aspects => {:thumbnail => {:file => fixture_file_upload('binary/SperrySlantStar.bmp', 'image/bmp', :binary)}})
+      a = Attachment.create(:attachee => users(:chris), :url => 'http://cho.hapgoods.com/wordpress/', :_aspects => {:thumbnail => {:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)}})
       assert a.valid?, a.errors.full_messages.first
       assert a.aspects.any?
     end
@@ -148,7 +149,7 @@ class ModelTest < ActiveSupport::TestCase
   def test_single_source_required
     assert_no_difference 'Attachment.count' do
       assert_raise RuntimeError do
-        a = Attachment.new({:attachee => users(:chris), :url => 'http://www.memoryminer.com/', :file => fixture_file_upload('binary/SperrySlantStar.bmp', 'image/bmp', :binary)})
+        a = Attachment.new({:attachee => users(:chris), :url => 'http://www.memoryminer.com/', :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)})
         a.save
       end
     end
@@ -196,7 +197,7 @@ class ModelTest < ActiveSupport::TestCase
   end
 
   def test_info_on_new
-    a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('binary/AlexOnBMW#4.jpg', 'image/jpeg', :binary), :_aspects => {})
+    a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary), :_aspects => {})
     assert a.metadata[:time].is_a?(Time)
     assert_equal Time.parse('Sat, 28 Nov 1998 11:39:37 +0000'), a.metadata[:time].to_time
   end
@@ -209,14 +210,12 @@ class ModelTest < ActiveSupport::TestCase
   
   def test_create_aspect_post_facto
     assert_difference 'Attachment.count' do
-      Attachment.create(:attachee => users(:pascale), :file => fixture_file_upload('binary/SperrySlantStar.bmp', 'image/bmp', :binary), :parent_id => attachments(:sss).id, :aspect => '*proof')
+      Attachment.create(:attachee => users(:pascale), :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary), :parent_id => attachments(:sss).id, :aspect => '*proof')
     end
     assert_equal 1, attachments(:sss).aspects.size
     assert a = attachments(:sss).aspects.first
     assert_equal "*proof", a.aspect
-    assert a.system, "Aspect of a system attachment should also be a system attachment."
-    assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(a.digest).chomp!  # Digest::MD5.digest(File.read('test/fixtures/binary/SperrySlantStar.bmp'))
+    assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(a.digest).chomp!  # Digest::MD5.digest(File.read('test/fixtures/attachments/SperrySlantStar.bmp'))
     assert_equal 4534, a.size
-    assert_match %r(http:\/\/[\S]+\/media\/#{UUID_REGEXP}\/attachments\/#{UUID_REGEXP}.[\w]+), a.http_url
   end
 end
