@@ -10,6 +10,8 @@ module GroupSmarts # :nodoc:
         
         def store(source)
           @metadata = source.metadata
+          FileUtils.mkdir_p(::File.dirname(fn))
+          # TODO: raise an exception if the file exists.
           ::File.cp(source.tempfile.path, fn)
         end
         # =Metadata=
