@@ -7,9 +7,7 @@ task :default => :test
 
 desc 'Test the attach plugin.'
 Rake::TestTask.new(:test) do |t|
-  t.libs << 'lib'
-  t.pattern = 'test/**/*_test.rb'
-  t.verbose = true
+  # TODO: raise exception and recommend changing to test directory
 end
 
 desc 'Generate documentation for the attach plugin.'

@@ -64,3 +64,13 @@ Technically, cleanly reading the header on a GET and subsequently not downloadin
 scope of this initial implementation.  The expedient solution (a HEAD followed by a GET) is used.  
 c. Declaration of standard processing-by-aspect is weak and not well documented.
 
+Tests
+=====================
+This plugin include a test suite embedded in an application.  You can run the suite as follows:
+
+	$ cd vendor/plugins/attach/test
+	$ rake
+	
+You can specify the database adapter and a specific Gem version of Rails to use as follows:
+
+	$ RAILS_GEM_VERSION=2.1 DB=mysql rake

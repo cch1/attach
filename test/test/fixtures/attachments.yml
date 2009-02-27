@@ -1,0 +1,57 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+<%
+def digest(name)
+  fn = File.join('test', 'fixtures', 'attachments', name)
+  data = File.open(fn,'rb').read
+  digest = Digest::MD5.digest(data)
+  "!binary | #{[digest].pack('m')}\n"
+end
+%>
+
+one:
+  uri: test/fixtures/attachments/plus.png
+  content_type: image/png
+  digest: <%= digest('plus.png') %>
+  size: 1
+  aspect: MyString
+  filename: plus.png
+  metadata: ~
+  description: My Description
+  parent_id: ~
+  attachee: chris (User)
+
+one_thumbnail:
+  uri: test/fixtures/attachments/plus_thumbnail.png
+  content_type: image/png
+  digest: ~
+  size: 1
+  aspect: thumbnail
+  filename: MyString
+  metadata: ~
+  description: ~
+  parent_id: one
+  attachee: chris (User)
+
+two:
+  uri: test/fixtures/attachments/rails.png
+  content_type: image/png
+  digest: ~
+  size: 1
+  aspect: thumbnail
+  filename: MyString
+  metadata: ~
+  description: ~
+  parent_id: one
+  attachee: chris (User)
+
+sss:
+  uri: test/fixtures/attachments/SperrySlantStar.bmp
+  content_type: image/bmp
+  digest: ~
+  size: 1
+  aspect: thumbnail
+  filename: SperrySlantStar.bmp
+  metadata: ~
+  description: ~
+  parent_id: one
+  attachee: chris (User)
