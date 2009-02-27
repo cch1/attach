@@ -1,3 +1,5 @@
+require 'fileutils'
+
 module GroupSmarts # :nodoc:
   module Attach # :nodoc:
     module Sources
@@ -12,7 +14,7 @@ module GroupSmarts # :nodoc:
           @metadata = source.metadata
           FileUtils.mkdir_p(::File.dirname(fn))
           # TODO: raise an exception if the file exists.
-          ::File.cp(source.tempfile.path, fn)
+          ::FileUtils.cp(source.tempfile.path, fn)
         end
         # =Metadata=
         # Construct a URI using the file scheme.
@@ -37,9 +39,9 @@ module GroupSmarts # :nodoc:
 
         # Returns a closed Tempfile of source's data.
         def tempfile
-          returning Tempfile.new(filename, GroupSmarts::Attach.tempfile_path) do |tmp|
+          returning ::Tempfile.new(filename, GroupSmarts::Attach.tempfile_path) do |tmp|
             tmp.close
-            FileUtils.cp file, tmp.path
+            ::FileUtils.cp(fn, tmp.path)
           end
         end
 
