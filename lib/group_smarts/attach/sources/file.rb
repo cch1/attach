@@ -5,31 +5,24 @@ module GroupSmarts # :nodoc:
     module Sources
       # Methods for duplexed File sources/sinks.
       class File < GroupSmarts::Attach::Sources::IO
-        def initialize(uri, metadata = {})
-          @uri = uri
-          super
-        end
-        
-        def store(source)
-          @metadata = source.metadata
-          FileUtils.mkdir_p(::File.dirname(fn))
+        # Create a new File at the given URI and store the given source in it. 
+        def self.store(source, uri)
+          FileUtils.mkdir_p(::File.dirname(uri.path))
           # TODO: raise an exception if the file exists.
-          ::FileUtils.cp(source.tempfile.path, fn)
+          FileUtils.cp(source.tempfile.path, uri.path)
+          self.new(::File.open(uri.path), source.metadata)
         end
+
         # =Metadata=
         # Construct a URI using the file scheme.
         def uri
-          @uri
+          @uri ||= URI.parse("file://localhost").merge(URI.parse(file.path))
         end
         
-        def destroy
-          begin
-            FileUtils.rm fn
-          rescue
-            logger.info "Exception destroying  #{fn.inspect}: [#{$!.class.name}] #{$1.to_s}"
-          ensure
-            super
-          end
+        # Returns a file name suitable for this source when saved in a persistent file.
+        # This is a fallback as the basename can be cryptic in many case.
+        def filename
+          @metadata[:filename] || ::File.basename(file.path)
         end
 
         # =Data=
@@ -49,15 +42,24 @@ module GroupSmarts # :nodoc:
           file
         end
         
+        def destroy
+          begin
+            FileUtils.rm fn
+          rescue
+            logger.info "Exception destroying  #{fn.inspect}: [#{$!.class.name}] #{$1.to_s}"
+          ensure
+            super
+          end
+        end
+
         private
         def fn
-          @fn ||= "#{@uri.path}.#{mime_type.to_sym}"
+          uri.path
         end
 
         def file
-          returning (@file || ::File.open(fn)) do |f|
-            f.rewind
-          end
+          @data.rewind
+          @data
         end
       end
     end
