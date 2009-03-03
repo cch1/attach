@@ -310,7 +310,7 @@ module GroupSmarts # :nodoc:
         # Choose the storage URI.  Done early so that it may be validated and allow attachment data blobs to be stored before or after main attachment record.
         def choose_storage
           self.uri = source.uri unless store
-          self.uri ||= ::URI.parse(attachment_options[:store] % uuid!)
+          self.uri ||= ::URI.parse(attachment_options[:store] % [uuid!, aspect, mime_type.to_sym.to_s])
         end
         
         # Create additional child attachments for each requested aspect.
