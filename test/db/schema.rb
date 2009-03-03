@@ -27,6 +27,6 @@ ActiveRecord::Schema.define(:version => 0) do
 
   create_table "attachment_blobs", :force => true do |t|
     t.binary "blob", :null => false
-    t.string "attachment_id", :limit => 36, :default => "", :null => false
+    t.integer "attachment_id", :null => false
   end
 end
