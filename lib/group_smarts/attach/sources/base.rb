@@ -29,10 +29,10 @@ module GroupSmarts # :nodoc:
                 when 's3' then Sources::S3.new(raw_source, metadata)
                 else raise "Source for scheme '#{raw_source.scheme}' not supported."
               end
-            when File then Sources::File.new(raw_source, metadata)
-            when Tempfile then Sources::Tempfile.new(raw_source, metadata)
-            when IO then Sources::IO.new(raw_source, metadata)
-            when String then Sources::Blob.new(raw_source, metadata)
+            when ::File then Sources::File.new(raw_source, metadata)
+            when ::Tempfile then Sources::Tempfile.new(raw_source, metadata)
+            when ::IO then Sources::IO.new(raw_source, metadata)
+            when ::String then Sources::Blob.new(raw_source, metadata)
             when nil then self.new
             else
               if defined?(::ActionController::TestUploadedFile) and raw_source.is_a?(::ActionController::TestUploadedFile)
