@@ -17,7 +17,7 @@ one:
   filename: plus.png
   metadata: ~
   description: My Description
-  parent_id: ~
+  parent: ~
   attachee: chris (User)
 
 one_thumbnail:
@@ -29,7 +29,7 @@ one_thumbnail:
   filename: MyString
   metadata: ~
   description: ~
-  parent_id: one
+  parent: one
   attachee: chris (User)
 
 two:
@@ -41,7 +41,7 @@ two:
   filename: MyString
   metadata: ~
   description: ~
-  parent_id: one
+  parent: one
   attachee: chris (User)
 
 sss:
@@ -53,5 +53,5 @@ sss:
   filename: SperrySlantStar.bmp
   metadata: ~
   description: ~
-  parent_id: one
+  parent: one
   attachee: chris (User)
