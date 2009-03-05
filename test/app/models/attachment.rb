@@ -6,7 +6,7 @@ class Attachment < ActiveRecord::Base
 
   belongs_to :attachee, :polymorphic => true
 
-  has_attachment({:store => "file://localhost/#{Rails.root}/public/attachments/%s", :_aspects => [:thumbnail], :size => 1.byte..15.megabytes})
+  has_attachment({:store => "file://localhost#{Rails.root}/public/attachments/%s_%s.%s", :_aspects => [:thumbnail], :size => 1.byte..15.megabytes})
   
   validates_as_attachment
 
