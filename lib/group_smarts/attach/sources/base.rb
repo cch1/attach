@@ -20,14 +20,9 @@ module GroupSmarts # :nodoc:
         def self.load(raw_source = nil, metadata = {})
           case raw_source
             when ::URI  # raw source is actually a reference to an external source
-              case raw_source.scheme
+              case uri = raw_source.scheme
                 when 'http', 'https' then Sources::Http.new(raw_source, metadata)
-                when 'db' then Sources::ActiveRecord.new(raw_source, metadata)
-                when 'file', NilClass
-                  f = ::File.open(URI.decode(raw_source.path), "r+b")
-                  Sources::File.new(f, metadata)
-                when 's3' then Sources::S3.new(raw_source, metadata)
-                else raise "Source for scheme '#{raw_source.scheme}' not supported."
+                else raise "Source for scheme '#{raw_source.scheme}' not supported for loading."
               end
             when ::File then Sources::File.new(raw_source, metadata)
             when ::Tempfile then Sources::Tempfile.new(raw_source, metadata)
@@ -40,6 +35,17 @@ module GroupSmarts # :nodoc:
               else
                 raise "Don't know how to load #{raw_source.class}."
               end
+          end
+        end
+        
+        def self.reload(uri, metadata = {})
+          case uri.scheme
+            when 'http', 'https' then Sources::Http.new(uri, metadata)
+            # Following operations use URI to load a persisted source from storage
+            when 'db' then Sources::ActiveRecord.reload(uri, metadata)
+            when 'file', NilClass then Sources::File.reload(uri, metadata)
+            when 's3' then Sources::S3.reload(uri, metadata)
+            else raise "Source for scheme '#{uri.scheme}' not supported for reloading."
           end
         end
         
@@ -63,11 +69,11 @@ module GroupSmarts # :nodoc:
         
         # Store the given source at the given URI.
         def self.store(source, uri)
-          store = case uri.scheme
+          case uri.scheme
 #            when 'http', 'https' then Sources::Http.new(uri)   # Need ARes to pull this off...
             when 'file' then Sources::File.store(source, uri)
 #            when 's3' then Sources::S3.new(uri)
-            when 'db' then Sources::ActiveRecord.source(source, uri)
+            when 'db' then Sources::ActiveRecord.store(source, uri)
             else raise "Don't know how to store to #{uri}."
           end
         end

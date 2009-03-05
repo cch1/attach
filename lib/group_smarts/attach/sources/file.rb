@@ -13,6 +13,12 @@ module GroupSmarts # :nodoc:
           self.new(::File.open(uri.path), source.metadata)
         end
 
+        # Reload a persisted source
+        def self.reload(uri, metadata = {})
+          f = ::File.open(URI.decode(uri.path), "r+b")
+          self.new(f, metadata)
+        end
+
         # =Metadata=
         # Construct a URI using the file scheme.
         def uri
@@ -42,6 +48,7 @@ module GroupSmarts # :nodoc:
           file
         end
         
+        # =State Transitions=
         def destroy
           begin
             FileUtils.rm fn

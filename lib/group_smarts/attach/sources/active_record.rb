@@ -4,19 +4,22 @@ module GroupSmarts # :nodoc:
       # Methods for duplexed, persistent sources/sinks
       class ActiveRecord < GroupSmarts::Attach::Sources::Base
         attr_reader :uri
-        def initialize(uri, m = {})
-          super
-          @uri = @data
+
+        # Create a new record identified by the given URI and store the given source in it. 
+        def self.store(source, uri)
+          attachment_id = uri.path.split('/')[-1]
+          db_file = AttachmentBlob.create(:attachment_id => attachment_id, :blob => source.blob)
+          self.new(db_file, source.metadata)
         end
         
-        # =State Transitions=
-        # Save this source to its persistent storage
-        def store(source)
-          @metadata = source.metadata # Assume the source's metadata
-          dbf.blob = source.blob
-          dbf.save!
+        # Reload a persisted source
+        def self.reload(uri, metadata = {})
+          attachment_id = uri.path.split('/')[-1]
+          raise "Missing attachment blob!" unless db_file = AttachmentBlob.find_by_attachment_id(attachment_id)
+          self.new(db_file, metadata)
         end
 
+        # =State Transitions=
         # Destroy this source/sink and return a new instance of the base source.
         def destroy
           super
@@ -39,7 +42,7 @@ module GroupSmarts # :nodoc:
         end
         
         def dbf
-          @dbf ||= ::AttachmentBlob.find_by_attachment_id(id) || ::AttachmentBlob.new(:attachment_id => id)
+          @data ||= AttachmentBlob.find_by_attachment_id(id)
         end
       end
     end
