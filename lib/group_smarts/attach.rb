@@ -194,7 +194,7 @@ module GroupSmarts # :nodoc:
       
       # Get the source.
       def source
-        @source ||= Sources::Base.load(uri)
+        @source ||= Sources::Base.reload(uri)
       end
       
       # Set the source.
@@ -280,6 +280,7 @@ module GroupSmarts # :nodoc:
 
         # Process the source and load the resulting metadata.  No processing of the primary attachment should impede the creation of aspects.
         def process!
+          logger.debug "Attach: PROCESS     #{self} (#{source} @ #{source.uri})\n"
           self.source = Sources::Base.process(source, required_processing) if source.valid? && required_processing
           true
         end
@@ -309,12 +310,14 @@ module GroupSmarts # :nodoc:
       
         # Choose the storage URI.  Done early so that it may be validated and allow attachment data blobs to be stored before or after main attachment record.
         def choose_storage
+          logger.debug "Attach: CHOOSE      #{self} (#{source} @ #{source.uri})\n"
           self.uri = source.uri unless store
           self.uri ||= ::URI.parse(attachment_options[:store] % [uuid!, aspect, mime_type.to_sym.to_s])
         end
         
         # Create additional child attachments for each requested aspect.
         def create_aspects
+          logger.debug "Attach: CREATE      #{self} (#{source} @ #{source.uri})\n"
           _aspects.each do |a|
             raise(AspectError.new("Can't create an aspect of an aspect")) unless parent_id.nil?
             name, attributes = *a
@@ -331,6 +334,7 @@ module GroupSmarts # :nodoc:
         # Store the attachment to the backend, if required, and trigger associated callbacks.
         # Sources are saved to the location identified by the uri attribute if the store attribute is set.
         def save_source
+          logger.debug "Attach: SAVE SOURCE #{self} (#{source} @ #{source.uri})\n"
           if @source_updated && uri.host == 'localhost'
              @source_updated = nil # Indicate that no further storage is necessary.
             self.source = Sources::Base.store(source, uri)
