@@ -139,4 +139,20 @@ class SourceTest < ActiveSupport::TestCase
     s.destroy
     assert !File.readable?(path)
   end
+  
+  def test_process_thumbnail_with_rmagick
+    s = GroupSmarts::Attach::Sources::Base.load(fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary))
+    assert s = GroupSmarts::Attach::Sources::Base.process(s, :thumbnail)
+    assert_equal 128, s.metadata[:width]
+    assert_equal 102, s.metadata[:height]
+    assert_operator 4616..4636, :include?, s.size
+    assert_operator 4616..4636, :include?, s.blob.size
+  end
+
+  def test_process_info_with_exifr
+    s = GroupSmarts::Attach::Sources::Base.load(fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary))
+    assert s = GroupSmarts::Attach::Sources::Base.process(s, :info)
+    assert s.metadata[:time].is_a?(Time)
+    assert_equal Time.parse('Sat, 28 Nov 1998 11:39:37 -0500'), s.metadata[:time].to_time
+  end
 end
