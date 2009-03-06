@@ -19,7 +19,7 @@ one:
   content_type: image/png
   digest: <%= digest('plus.png') %>
   size: 1
-  aspect: MyString
+  aspect: ~
   filename: plus.png
   metadata: ~
   description: My Description
@@ -43,7 +43,7 @@ two:
   content_type: image/png
   digest: ~
   size: 1
-  aspect: thumbnail
+  aspect: ~
   filename: MyString
   metadata: "<%= {:time => DateTime.parse('Mon, 16 Nov 1998 11:39:37 +0000')}.to_yaml %>"
   description: ~
@@ -55,7 +55,7 @@ sss:
   content_type: image/bmp
   digest: ~
   size: 1
-  aspect: thumbnail
+  aspect: ~
   filename: SperrySlantStar.bmp
   metadata: ~
   description: ~
