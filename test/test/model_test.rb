@@ -1,27 +1,35 @@
 require File.dirname(__FILE__) + '/test_helper.rb'
 
 class ModelTest < ActiveSupport::TestCase
+  UUID_RE = /[[:xdigit:]]{8}[:-][[:xdigit:]]{4}[:-][[:xdigit:]]{4}[:-][[:xdigit:]]{4}[:-][[:xdigit:]]{12}/
+
+  # TODO: Avoid rescued fixture require_dependency failure
   fixtures :users, :attachments, :attachment_blobs
-  
+
+  FILE_STORE = File.join(Rails.root, 'public', 'attachments')
+  FIXTURE_FILE_STORE = File.join(Rails.root, 'test', 'fixtures', 'attachments')
+
+  def setup
+    FileUtils.mkdir FILE_STORE
+    FileUtils.cp_r File.join(FIXTURE_FILE_STORE, '.'), FILE_STORE
+  end
+
   def teardown
-    FileUtils.rm_rf File.join(Rails.root, 'public', 'attachments')
+    FileUtils.rm_rf FILE_STORE
   end
 
   def test_create_attachment_via_file_with_no_aspects
     assert_difference 'Attachment.count' do
+      Attachment.attachment_options[:store] = "file://localhost#{Rails.root}/public/attachments/%s__%s.%s"
       a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary), :_aspects => [])
       assert a.valid?, a.errors.full_messages.first
-      assert_not_nil a.filename
       assert_equal 'SperrySlantStar.bmp', a.filename
       assert_not_nil a.digest
       assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(a.digest).chomp!  # Base64.encode64(Digest::MD5.digest(File.read('test/fixtures/attachments/SperrySlantStar.bmp'))).chomp!
       assert_equal 4534, a.size
       assert a.aspects.empty?
-
-      assert_not_nil a = Attachment.find(a.id)
       assert a.uri.absolute?
-      assert_equal 'db', a.uri.scheme
-      assert_equal a.id, a.uri.path.split('/')[-1]
+      assert_equal 'file', a.uri.scheme
     end
   end
 
@@ -37,9 +45,9 @@ class ModelTest < ActiveSupport::TestCase
 
   def test_create_system_attachment_via_file_with_default_aspect
     assert_difference 'Attachment.count', 2 do
-      a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary))
+      a = Attachment.create(:attachee => users(:pascale), :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary))
       assert a.valid?, a.errors.full_messages.first
-      assert users(:chris).attachments.first.valid?
+      assert users(:pascale).attachments.first.valid?
       assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(a.digest).chomp!  # Digest::MD5.digest(File.read('test/fixtures/attachments/SperrySlantStar.bmp'))
       assert_equal 4534, a.size
     end
@@ -55,7 +63,7 @@ class ModelTest < ActiveSupport::TestCase
       assert_equal 25535, a.size
       assert_equal 320, a.metadata[:width]
       assert_equal 256, a.metadata[:height]
-      assert_match %r(db:\/\/[\S]+\/#{UUID_REGEXP}), a.uri.to_s
+      assert_equal 'file', a.uri.scheme
       assert a.metadata.any?
       assert a.metadata.has_key?(:time)
       assert a.metadata[:time].acts_like?(:time)
@@ -157,7 +165,7 @@ class ModelTest < ActiveSupport::TestCase
   
   def test_delete_simple
     assert_difference 'Attachment.count', -1 do
-      assert_difference AttachmentBlob, :count, -1 do #DbFile.count
+      assert_difference 'GroupSmarts::Attach::AttachmentBlob.count', -1 do #DbFile.count
         res = attachments(:sss).destroy
       end
     end
@@ -167,9 +175,7 @@ class ModelTest < ActiveSupport::TestCase
     res = attachments(:one)
     assert 1, res.aspects.size
     assert_difference 'Attachment.count', -2 do # Deletes child aspect as well.
-      assert_difference AttachmentBlob, :count, -2 do #DbFile.count
-        res.destroy
-      end
+      res.destroy
     end
   end
   
@@ -183,7 +189,7 @@ class ModelTest < ActiveSupport::TestCase
   end
   
   def test_create_simple
-    assert_no_difference Attachment, :count do
+    assert_no_difference 'Attachment.count' do
       assert_nothing_raised do
         a = Attachment.create
       end
@@ -191,15 +197,15 @@ class ModelTest < ActiveSupport::TestCase
   end
   
   def test_info
-    assert attachments(:second).metadata[:time]
-    assert attachments(:second).metadata[:time].is_a?(Time)
-    assert_equal Time.parse('Sat, 28 Nov 1998 11:39:37 +0000'), attachments(:second).metadata[:time]
+    assert attachments(:two).metadata[:time]
+    assert attachments(:two).metadata[:time].is_a?(Time)
+    assert_equal Time.parse('Sat, 16 Nov 1998 11:39:37 +0000'), attachments(:two).metadata[:time]
   end
 
   def test_info_on_new
     a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary), :_aspects => {})
     assert a.metadata[:time].is_a?(Time)
-    assert_equal Time.parse('Sat, 28 Nov 1998 11:39:37 +0000'), a.metadata[:time].to_time
+    assert_equal Time.parse('Sat, 28 Nov 1998 11:39:37 -0500'), a.metadata[:time].to_time
   end
   
   def test_update
