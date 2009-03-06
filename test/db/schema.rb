@@ -11,7 +11,7 @@ ActiveRecord::Schema.define(:version => 0) do
   end
 
   create_table :attachments, :force => true do |t|
-    t.string :uri, :limit => 150
+    t.string :uri, :limit => 255
     t.string :content_type, :limit => 35
     t.binary :digest
     t.integer :size
