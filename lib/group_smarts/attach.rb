@@ -194,7 +194,7 @@ module GroupSmarts # :nodoc:
       
       # Get the source.
       def source
-        @source ||= Sources::Base.reload(uri)
+        @source ||= uri && Sources::Base.reload(uri)
       end
       
       # Set the source.
@@ -273,15 +273,17 @@ module GroupSmarts # :nodoc:
         
         # Ensure source is valid, and if not, update the ActiveRecord errors object with the source error.
         def valid_source?
-          returning source.valid? do |valid|
+          source && returning(source.valid?) do |valid|
             errors.add_to_base(source.error) unless valid
           end          
         end
 
         # Process the source and load the resulting metadata.  No processing of the primary attachment should impede the creation of aspects.
         def process!
-          logger.debug "Attach: PROCESS     #{self} (#{source} @ #{source.uri})\n"
-          self.source = Sources::Base.process(source, required_processing) if source.valid? && required_processing
+          if source && source.valid? && required_processing
+            logger.debug "Attach: PROCESSING     #{self} (#{source} @ #{source.uri}) with #{required_processing}\n"
+            self.source = Sources::Base.process(source, required_processing)
+          end
           true
         end
         
@@ -310,18 +312,18 @@ module GroupSmarts # :nodoc:
       
         # Choose the storage URI.  Done early so that it may be validated and allow attachment data blobs to be stored before or after main attachment record.
         def choose_storage
-          logger.debug "Attach: CHOOSE      #{self} (#{source} @ #{source.uri})\n"
+          return unless source
           self.uri = source.uri unless store
           self.uri ||= ::URI.parse(attachment_options[:store] % [uuid!, aspect, mime_type.to_sym.to_s])
         end
         
         # Create additional child attachments for each requested aspect.
         def create_aspects
-          logger.debug "Attach: CREATE      #{self} (#{source} @ #{source.uri})\n"
           _aspects.each do |a|
             raise(AspectError.new("Can't create an aspect of an aspect")) unless parent_id.nil?
             name, attributes = *a
             attributes ||= {:source => source}
+            logger.debug "Attach: CREATE ASPECT  #{self} (#{source} @ #{source.uri}) as #{name}\n"
             returning aspects.find_or_initialize_by_aspect(name.to_s) do |_aspect|
               _aspect.attributes = attributes.merge!({:attachee => attachee, :_aspects => {}})
               _aspect.save!
@@ -334,9 +336,9 @@ module GroupSmarts # :nodoc:
         # Store the attachment to the backend, if required, and trigger associated callbacks.
         # Sources are saved to the location identified by the uri attribute if the store attribute is set.
         def save_source
-          logger.debug "Attach: SAVE SOURCE #{self} (#{source} @ #{source.uri})\n"
           if @source_updated && uri.host == 'localhost'
-             @source_updated = nil # Indicate that no further storage is necessary.
+            @source_updated = nil # Indicate that no further storage is necessary.
+            logger.debug "Attach: SAVE SOURCE    #{self} (#{source} @ #{source.uri}) to #{uri}\n"
             self.source = Sources::Base.store(source, uri)
           end
         end
