@@ -52,8 +52,9 @@ module GroupSmarts # :nodoc:
         def destroy
           begin
             FileUtils.rm fn
-          rescue
-            logger.info "Exception destroying  #{fn.inspect}: [#{$!.class.name}] #{$1.to_s}"
+          rescue => e
+            Rails.logger.info "Exception destroying  #{fn.inspect}: [#{$!.class.name}] #{$1.to_s}"
+            raise e
           ensure
             super
           end
