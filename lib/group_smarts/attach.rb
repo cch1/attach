@@ -64,7 +64,7 @@ module GroupSmarts # :nodoc:
           attr_accessor :store  # indicates whether or not to store attachment data.  Set to false to not store data and instead use a remote reference
           attr_writer :_aspects # Array or Hash of aspects to create.  Set to an empty array to not create any aspects.
 
-          attachment_options[:store] ||= Proc.new {|id, aspect, extension| "db://localhost/attachment_blobs/#{id}" }
+          attachment_options[:store] ||= Proc.new {|id, aspect, extension| "db://localhost/attachment_blobs/#{id}"}
           attachment_options[:path_prefix] ||= attachment_options[:file_system_path]
           if attachment_options[:path_prefix].nil?
             attachment_options[:path_prefix] = attachment_options[:store] == :s3 ? table_name : File.join("public", table_name)
@@ -320,7 +320,7 @@ module GroupSmarts # :nodoc:
         def choose_storage
           return unless source
           self.uri = source.uri unless store
-          self.uri ||= self.class.storage_uri(uuid!, aspect, mime_type)
+          self.uri ||= self.class.storage_uri(uuid!, aspect, mime_type.to_sym)
         end
         
         # Create additional child attachments for each requested aspect.
