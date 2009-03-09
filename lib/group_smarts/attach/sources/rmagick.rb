@@ -1,4 +1,4 @@
-require 'RMagick'
+require 'RMagick' unless defined?(RMagick)
 module GroupSmarts # :nodoc:
   module Attach # :nodoc:
     module Sources
