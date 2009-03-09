@@ -119,7 +119,7 @@ class SourceTest < ActiveSupport::TestCase
   def test_reload_source_from_invalid_file_uri
     path = File.join(FILE_STORE, 'xrails.png')
     uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
-    assert_raises Errno::ENOENT do
+    assert_raises GroupSmarts::Attach::MissingSource do
       s = GroupSmarts::Attach::Sources::Base.reload(uri)
     end
   end
