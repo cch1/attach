@@ -17,8 +17,8 @@ module GroupSmarts # :nodoc:
         def self.reload(uri, metadata = {})
           begin
             f = ::File.open(URI.decode(uri.path), "r+b")
-          rescue Errno::ENOENT
-            raise MissingSource
+          rescue Errno::ENOENT => e
+            raise MissingSource, e.to_s
           end
           self.new(f, metadata)
         end
