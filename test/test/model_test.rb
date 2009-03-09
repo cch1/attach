@@ -20,7 +20,6 @@ class ModelTest < ActiveSupport::TestCase
 
   def test_create_attachment_via_file_with_no_aspects
     assert_difference 'Attachment.count' do
-      Attachment.attachment_options[:store] = "file://localhost#{Rails.root}/public/attachments/%s__%s.%s"
       a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary), :_aspects => [])
       assert a.valid?, a.errors.full_messages.first
       assert_equal 'SperrySlantStar.bmp', a.filename
