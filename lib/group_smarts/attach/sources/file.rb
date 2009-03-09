@@ -15,7 +15,11 @@ module GroupSmarts # :nodoc:
 
         # Reload a persisted source
         def self.reload(uri, metadata = {})
-          f = ::File.open(URI.decode(uri.path), "r+b")
+          begin
+            f = ::File.open(URI.decode(uri.path), "r+b")
+          rescue Errno::ENOENT
+            raise MissingSource
+          end
           self.new(f, metadata)
         end
 

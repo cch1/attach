@@ -12,6 +12,7 @@ module GroupSmarts # :nodoc:
 
     class AspectError < StandardError;  end
     class AttachmentError < StandardError; end
+    class MissingSource < StandardError; end
 
     module ActMethods
       # Options: 
@@ -344,7 +345,12 @@ module GroupSmarts # :nodoc:
         end
 
         def destroy_source
-          source.destroy
+          begin
+            source.destroy
+          rescue MissingSource => e
+            # If the source is missing, carry on.
+            true
+          end
         end
         
         # Removes the aspects for the attachment, if it has any
