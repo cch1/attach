@@ -1,9 +1,9 @@
 # Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
 <%
-FILE_STORE = File.join(Rails.root, 'public', 'attachments')
+FILE_STORE = File.join(RAILS_ROOT, 'public', 'attachments')
 
 def digest(name)
-  fn = File.join(Rails.root, 'test', 'fixtures', 'attachments', name)
+  fn = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments', name)
   data = File.open(fn,'rb').read
   digest = Digest::MD5.digest(data)
   "!binary | #{[digest].pack('m')}\n"

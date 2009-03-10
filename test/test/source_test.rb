@@ -5,8 +5,8 @@ class SourceTest < ActiveSupport::TestCase
 
   fixtures :users, :attachments, :attachment_blobs
 
-  FILE_STORE = File.join(Rails.root, 'public', 'attachments')
-  FIXTURE_FILE_STORE = File.join(Rails.root, 'test', 'fixtures', 'attachments')
+  FILE_STORE = File.join(RAILS_ROOT, 'public', 'attachments')
+  FIXTURE_FILE_STORE = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments')
 
   def setup
     FileUtils.mkdir FILE_STORE
