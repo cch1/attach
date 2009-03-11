@@ -19,6 +19,8 @@ module GroupSmarts # :nodoc:
         # attachment data and metadata) or simple sources (only able to provide raw data).  Every storage source should also be a primary source. 
         def self.load(raw_source = nil, metadata = {})
           case raw_source
+            when ::ActionController::UploadedStringIO then Sources::IO.new(raw_source, metadata)
+            when ::ActionController::UploadedTempfile then Sources::Tempfile.new(raw_source, metadata)
             when ::URI  # raw source is actually a reference to an external source
               case raw_source.scheme
                 when 'http', 'https' then Sources::Http.new(raw_source, metadata)
@@ -29,12 +31,9 @@ module GroupSmarts # :nodoc:
             when ::IO then Sources::IO.new(raw_source, metadata)
             when ::String then Sources::Blob.new(raw_source, metadata)
             when nil then self.new
+            when defined?(::ActionController::TestUploadedFile) && ::ActionController::TestUploadedFile then Sources::Tempfile.new(raw_source, metadata) 
             else
-              if defined?(::ActionController::TestUploadedFile) and raw_source.is_a?(::ActionController::TestUploadedFile)
-                Sources::Tempfile.new(raw_source, metadata)
-              else
-                raise "Don't know how to load #{raw_source.class}."
-              end
+              raise "Don't know how to load #{raw_source.class}."
           end
         end
         
