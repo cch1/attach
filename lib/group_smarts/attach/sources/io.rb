@@ -11,7 +11,7 @@ module GroupSmarts # :nodoc:
         
         # Returns the MIME::Type of source.
         def mime_type
-          @mime_type ||= @data.respond_to?(:content_type) ? ::Mime::Type.lookup(@tempfile.content_type) : super
+          @mime_type ||= @data.respond_to?(:content_type) ? ::Mime::Type.lookup(@data.content_type) : super
         end
         
         # =Data=
