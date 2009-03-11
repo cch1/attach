@@ -20,7 +20,7 @@ module GroupSmarts # :nodoc:
         def self.load(raw_source = nil, metadata = {})
           case raw_source
             when ::URI  # raw source is actually a reference to an external source
-              case uri = raw_source.scheme
+              case raw_source.scheme
                 when 'http', 'https' then Sources::Http.new(raw_source, metadata)
                 else raise "Source for scheme '#{raw_source.scheme}' not supported for loading."
               end
