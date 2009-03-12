@@ -60,3 +60,14 @@ sss:
   description: ~
   parent: ~
   attachee: chris (User)
+remote:
+  uri: http://cho.hapgoods.com/icons/powered_by_fedora.png
+  content_type: image/png
+  digest: ~
+  size: ~
+  aspect: ~
+  filename: powered_by_fedora.png
+  metadata: ~
+  description: ~
+  parent: ~
+  attachee: chris (User)
