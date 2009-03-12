@@ -304,7 +304,7 @@ module GroupSmarts # :nodoc:
       
         # Returns the processing required for the attachment.
         def required_processing
-          @processing || @source_updated && case
+          @source_updated && case
             when store && image? && resize
               resize
             when aspect && image? && Sources::Base::AvailableImageProcessing.include?(aspect.to_sym)
