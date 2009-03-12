@@ -65,11 +65,6 @@ module GroupSmarts # :nodoc:
           attr_writer :_aspects # Array or Hash of aspects to create.  Set to an empty array to not create any aspects.
 
           attachment_options[:store] ||= Proc.new {|id, aspect, extension| "db://localhost/attachment_blobs/#{id}"}
-          attachment_options[:path_prefix] ||= attachment_options[:file_system_path]
-          if attachment_options[:path_prefix].nil?
-            attachment_options[:path_prefix] = attachment_options[:store] == :s3 ? table_name : File.join("public", table_name)
-          end
-          attachment_options[:path_prefix]   = attachment_options[:path_prefix][1..-1] if options[:path_prefix].first == '/'
 
           with_options :foreign_key => 'parent_id' do |m|
             m.has_many   :aspects, :class_name => base_class.to_s, :dependent => :destroy
