@@ -1,7 +1,5 @@
 # Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
 <%
-FILE_STORE = File.join(Rails.root, 'public', 'attachments')
-
 def digest(name)
   fn = File.join(Rails.root, 'test', 'fixtures', 'attachments', name)
   data = File.open(fn,'rb').read
@@ -10,7 +8,7 @@ def digest(name)
 end
 
 def file_fixture(fn)
-  File.join(FILE_STORE, fn)
+  File.join(Attachment::FILE_STORE, fn)
 end
 %>
 

@@ -6,16 +6,15 @@ class ModelTest < ActiveSupport::TestCase
   # TODO: Avoid rescued fixture require_dependency failure
   fixtures :users, :attachments, :attachment_blobs
 
-  FILE_STORE = File.join(Rails.root, 'public', 'attachments')
   FIXTURE_FILE_STORE = File.join(Rails.root, 'test', 'fixtures', 'attachments')
 
   def setup
-    FileUtils.mkdir FILE_STORE
-    FileUtils.cp_r File.join(FIXTURE_FILE_STORE, '.'), FILE_STORE
+    FileUtils.mkdir Attachment::FILE_STORE
+    FileUtils.cp_r File.join(FIXTURE_FILE_STORE, '.'), Attachment::FILE_STORE
   end
 
   def teardown
-    FileUtils.rm_rf FILE_STORE
+    FileUtils.rm_rf Attachment::FILE_STORE
   end
 
   def test_create_attachment_via_file_with_no_aspects
