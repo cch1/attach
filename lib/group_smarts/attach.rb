@@ -60,7 +60,7 @@ module GroupSmarts # :nodoc:
 
         # only need to define these once on a class
         unless included_modules.include?(InstanceMethods)
-          attr_accessor :resize
+          attr_accessor :resize, :iconify
           attr_accessor :store  # indicates whether or not to store attachment data.  Set to false to not store data and instead use a remote reference
           attr_writer :_aspects # Array or Hash of aspects to create.  Set to an empty array to not create any aspects.
 
@@ -286,7 +286,7 @@ module GroupSmarts # :nodoc:
             attributes.nil? ? Sources::Base::AvailableImageProcessing.include?(name) : attributes[:store]
           end
         end
-      
+
         # Returns the processing required for the attachment.
         def required_processing
           @source_updated && case
@@ -294,9 +294,9 @@ module GroupSmarts # :nodoc:
               resize
             when aspect && image? && Sources::Base::AvailableImageProcessing.include?(aspect.to_sym)
               aspect
-            when aspect && !image?
+            when aspect && iconify
               :iconify
-            when !aspect && data_required?     # Opportunistically extract bonus metadata for original attachment if the source data is/will be required.
+            when !aspect && data_required?  # Opportunistically extract bonus metadata for original attachment if the source data is/will be required.
               :info
           end
         end
