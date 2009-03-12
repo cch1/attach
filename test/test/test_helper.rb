@@ -11,10 +11,6 @@ load(RAILS_ROOT + "/db/schema.rb")
 
 # Set Test::Unit options for optimal performance/fidelity.
 class Test::Unit::TestCase
-  self.use_transactional_fixtures = true
-  self.use_instantiated_fixtures  = false
-#  self.fixture_path = "#{RAILS_ROOT}/../fixtures"
-  
   def self.uses_mocha(description)
     require 'mocha'
     yield

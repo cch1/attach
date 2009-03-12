@@ -1,6 +1,7 @@
 require File.dirname(__FILE__) + '/test_helper.rb'
 
 class ModelTest < ActiveSupport::TestCase
+  include ActionController::TestProcess
   UUID_RE = /[[:xdigit:]]{8}[:-][[:xdigit:]]{4}[:-][[:xdigit:]]{4}[:-][[:xdigit:]]{4}[:-][[:xdigit:]]{12}/
 
   # TODO: Avoid rescued fixture require_dependency failure
