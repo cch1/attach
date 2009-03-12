@@ -155,12 +155,6 @@ module GroupSmarts # :nodoc:
         uri && %w(file db s3).include?(uri.scheme)
       end
       
-#      # Return a filename for the attachment
-#      def filename
-#        #uri.path.split('/')[-1] || 'attachment'
-#        self[:filename] || [id, aspect, mime_type.to_sym].compact.join('_')
-#      end
-#
       # Returns the width/height in a suitable format for the image_tag helper: (100x100)
       def image_size
         [metadata[:width].to_s, metadata[:height].to_s] * 'x' if metadata && metadata[:width] && metadata[:height]
