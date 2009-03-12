@@ -31,6 +31,13 @@ class ModelTest < ActiveSupport::TestCase
       assert_equal 'file', a.uri.scheme
     end
   end
+  
+  # Do attachments holding rehydrated sources behave?
+  def test_source_rehydration
+    a = attachments(:one)
+    assert_not_nil a.source
+    assert_equal 630, a.blob.size
+  end
 
   def test_create_attachment_via_url_with_no_aspects
     url = "http://cho.hapgoods.com/wordpress"

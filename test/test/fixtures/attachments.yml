@@ -1,22 +1,23 @@
 # Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
 <%
 def digest(name)
-  fn = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments', name)
+  fn = File.join(Attachment::FIXTURE_FILE_STORE, name)
   data = File.open(fn,'rb').read
   digest = Digest::MD5.digest(data)
   "!binary | #{[digest].pack('m')}\n"
 end
 
-def file_fixture(fn)
-  File.join(Attachment::FILE_STORE, fn)
+def size(name)
+  fn = File.join(Attachment::FIXTURE_FILE_STORE, name)
+  File.size(fn)
 end
 %>
 
 one:
-  uri: <%= file_fixture('plus.png') %>
+  uri: <%= Attachment.storage_uri('plus', nil, :png) %>
   content_type: image/png
   digest: <%= digest('plus.png') %>
-  size: 1
+  size: <%= size('plus.png') %>
   aspect: ~
   filename: plus.png
   metadata: ~
@@ -25,10 +26,10 @@ one:
   attachee: chris (User)
 
 one_thumbnail:
-  uri: <%= file_fixture('plus_thumbnail.png') %>
+  uri: <%= Attachment.storage_uri('plus', 'thumbnail', :png) %>
   content_type: image/png
-  digest: ~
-  size: 1
+  digest: <%= digest('plus_thumbnail.png') %>
+  size: <%= size('plus_thumbnail.png') %>
   aspect: thumbnail
   filename: MyString
   metadata: ~
@@ -37,10 +38,10 @@ one_thumbnail:
   attachee: chris (User)
 
 two:
-  uri: <%= file_fixture('rails.png') %>
+  uri: <%= Attachment.storage_uri('rails', nil, :png) %>
   content_type: image/png
-  digest: ~
-  size: 1
+  digest: <%= digest('rails.png') %>
+  size: <%= size('rails.png') %>
   aspect: ~
   filename: MyString
   metadata: "<%= {:time => DateTime.parse('Mon, 16 Nov 1998 11:39:37 +0000')}.to_yaml %>"
@@ -49,10 +50,10 @@ two:
   attachee: chris (User)
 
 sss:
-  uri: <%= file_fixture('SperrySlantStar.bmp') %>
+  uri: <%= Attachment.storage_uri('SperrySlantStar', nil, :bmp) %>
   content_type: image/bmp
-  digest: ~
-  size: 1
+  digest: <%= digest('SperrySlantStar.bmp') %>
+  size: <%= size('SperrySlantStar.bmp') %>
   aspect: ~
   filename: SperrySlantStar.bmp
   metadata: ~

@@ -18,3 +18,5 @@ class Test::Unit::TestCase
     $stderr.puts "Skipping #{description} tests. `gem install mocha` and try again."
   end
 end
+
+::Attachment::FIXTURE_FILE_STORE = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments')
