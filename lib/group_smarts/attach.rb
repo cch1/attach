@@ -77,6 +77,8 @@ module GroupSmarts # :nodoc:
           end
           
           has_one :attachment_blob, :class_name => 'GroupSmarts::Attach::AttachmentBlob', :dependent => :destroy if GroupSmarts::Attach::AttachmentBlob.table_exists?
+          delegate :blob, :to => :source
+
 
           before_validation :process!
           before_validation :choose_storage
@@ -250,12 +252,6 @@ module GroupSmarts # :nodoc:
         @mime_type && write_attribute(:content_type, @mime_type.to_s)
       end
       
-      # Return the raw data (blob) of this attachment
-      def blob
-        source.blob
-      end
-      alias current_data blob # For backwards compatibility with AttachmentFu
-    
       protected
         # validates the content_type attribute according to the current model's options
         def valid_content_type?
