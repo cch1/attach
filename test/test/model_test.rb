@@ -105,10 +105,9 @@ class ModelTest < ActiveSupport::TestCase
     assert_difference 'Attachment.count', 2 do
       a = Attachment.create(:attachee => users(:chris), :url => 'http://cho.hapgoods.com/icons/powered_by_fedora.png', :_aspects => {:thumbnail => {:url => 'http://cho.hapgoods.com/icons/apache_pb2.gif'}})
       assert a.valid?, a.errors.full_messages.first
-      assert a.aspects.any?
-      assert a.size
-      aspect = a.aspects.find_by_aspect('thumbnail')
-      assert_not_nil a.size
+      assert_equal 3034, a.size
+      assert_kind_of GroupSmarts::Attach::Sources::Http, a.source # Confirm we didn't fetch the source
+      assert_not_nil aspect = a.aspects.find_by_aspect('thumbnail')
     end
   end
 
@@ -121,7 +120,7 @@ class ModelTest < ActiveSupport::TestCase
   end
   
   # Classic problems here include caching sources in a limited high-performance mode during validation only to find that all data is required later.
-  # Also state variables (store, _aspects) in the attach instnace methods are tricky to keep in sync during assignment.
+  # Also state variables (store, _aspects) in the attach instance methods are tricky to keep in sync during assignment.
   def test_validation_independence
     assert_nothing_raised do
       a = Attachment.new(:attachee => users(:chris), :file => fixture_file_upload('/attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary))
