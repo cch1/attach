@@ -3,11 +3,6 @@ module GroupSmarts # :nodoc:
     module Sources
       # Methods for Tempfile-based primary sources.
       class Tempfile < GroupSmarts::Attach::Sources::File
-        def initialize(tempfile, metadata)
-          super
-          @tempfile = @data
-        end
-        
         # =Metadata=
         # Returns the URI of the source.
         def uri
@@ -28,8 +23,8 @@ module GroupSmarts # :nodoc:
 
         # Trivial short-circuit that returns the rewind tempfile itself.
         def tempfile
-          @tempfile.rewind
-          @tempfile
+          @data.rewind
+          @data
         end
 
         # Returns the rewound IO instance that we are proxying.
