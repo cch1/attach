@@ -6,7 +6,7 @@ class ModelTest < ActiveSupport::TestCase
   # TODO: Avoid rescued fixture require_dependency failure
   fixtures :users, :attachments, :attachment_blobs
 
-  FIXTURE_FILE_STORE = File.join(Rails.root, 'test', 'fixtures', 'attachments')
+  FIXTURE_FILE_STORE = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments')
 
   def setup
     FileUtils.mkdir Attachment::FILE_STORE
