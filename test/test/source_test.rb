@@ -17,7 +17,7 @@ class SourceTest < ActiveSupport::TestCase
     FileUtils.rm_rf FILE_STORE
   end
 
-  def test_load_source_from_augmented_tempfile
+  def test_load_source_from_tempfile
     tf = fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)
     s = GroupSmarts::Attach::Sources::Base.load(tf)
     assert_instance_of GroupSmarts::Attach::Sources::Tempfile, s
@@ -29,9 +29,9 @@ class SourceTest < ActiveSupport::TestCase
     # Check metadata
     assert s.metadata
     assert_nil s.uri  # Tempfiles are not persistent
-    assert_equal 'SperrySlantStar.bmp', s.filename
-    assert_not_nil s.mime_type
-    assert_not_nil s.digest
+    assert_kind_of String, s.filename
+    assert_kind_of Mime::Type, s.mime_type
+    assert_kind_of String, s.digest
     assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(s.digest).chomp!  # Base64.encode64(Digest::MD5.digest(File.read('test/fixtures/attachments/SperrySlantStar.bmp'))).chomp!
     assert_equal 4534, s.size
   end

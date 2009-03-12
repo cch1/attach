@@ -14,14 +14,10 @@ module GroupSmarts # :nodoc:
           nil
         end
         
-        # Returns a file name suitable for this source when saved in a persistent file.
-        def filename
-          @tempfile.respond_to?(:original_filename) && @tempfile.original_filename
-        end
-        
         # Returns the MIME::Type of source.
         def mime_type
-          @mime_type ||= @tempfile.respond_to?(:content_type) ? ::Mime::Type.lookup(@tempfile.content_type) : Mime::Type.lookup_by_extension(filename.split('.')[-1])
+          @mime_type ||= Mime::Type.lookup_by_extension(filename.split('.')[-1])
+          super || @mime_type
         end
         
         # =Data=

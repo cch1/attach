@@ -183,7 +183,7 @@ module GroupSmarts # :nodoc:
       def file=(upload)
         return unless upload
         self.store = true if store.nil?
-        self.source = Sources::Base.load(upload)
+        self.source = Sources::Base.load(upload, cgi_metadata(upload))
       end
       
       # Getter for url virtual attribute for consistency with setter.  Useful in case this field is used in a form.
@@ -353,14 +353,21 @@ module GroupSmarts # :nodoc:
           begin
             source.destroy
           rescue MissingSource => e
-            # If the source is missing, carry on.
-            true
+            true # If the source is missing, carry on.
           end
         end
         
         # Removes the aspects for the attachment, if it has any
         def destroy_aspects
           self.aspects(true).each { |a| a.destroy }
+        end
+        
+        private
+        def cgi_metadata(data)
+          returning(Hash.new) do |md|
+            md[:filename] = data.original_filename if data.respond_to?(:original_filename) 
+            md[:content_type] = ::Mime::Type.lookup(data.content_type) if data.respond_to?(:content_type) 
+          end
         end
     end
   end
