@@ -335,11 +335,9 @@ module GroupSmarts # :nodoc:
         end
 
         def destroy_source
-          begin
-            source.destroy
-          rescue MissingSource => e
-            true # If the source is missing, carry on.
-          end
+          source.destroy 
+        rescue MissingSource
+          true # If the source is missing, carry on.
         end
         
         # Removes the aspects for the attachment, if it has any
