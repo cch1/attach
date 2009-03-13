@@ -32,6 +32,20 @@ class ModelTest < ActiveSupport::TestCase
     end
   end
   
+  def test_create_with_empty_file
+    assert_difference 'Attachment.count' do
+      a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/empty.txt', 'text/plain'), :_aspects => [])
+      assert a.valid?, a.errors.full_messages.first  # Attachment.attachment_options
+      assert_equal 'empty.txt', a.filename
+      assert_not_nil a.digest
+      assert_equal "1B2M2Y8AsgTpgAmY7PhCfg==", Base64.encode64(a.digest).chomp!  # Base64.encode64(Digest::MD5.digest(File.read('test/fixtures/attachments/SperrySlantStar.bmp'))).chomp!
+      assert_equal 0, a.size
+      assert a.aspects.empty?
+      assert a.uri.absolute?
+      assert_equal 'file', a.uri.scheme
+    end    
+  end
+  
   # Do attachments holding rehydrated sources behave?
   def test_source_rehydration
     a = attachments(:one)
