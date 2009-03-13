@@ -349,7 +349,7 @@ module GroupSmarts # :nodoc:
         def cgi_metadata(data)
           returning(Hash.new) do |md|
             md[:filename] = data.original_filename if data.respond_to?(:original_filename) 
-            md[:content_type] = ::Mime::Type.lookup(data.content_type) if data.respond_to?(:content_type) 
+            md[:mime_type] = ::Mime::Type.lookup(data.content_type) if data.respond_to?(:content_type) 
           end
         end
     end
