@@ -74,7 +74,6 @@ module GroupSmarts # :nodoc:
           has_one :attachment_blob, :class_name => 'GroupSmarts::Attach::AttachmentBlob', :dependent => :destroy if GroupSmarts::Attach::AttachmentBlob.table_exists?
           delegate :blob, :to => :source
 
-
           before_validation :process!
           before_validation :choose_storage
           before_save :save_source
@@ -191,7 +190,7 @@ module GroupSmarts # :nodoc:
       
       # Get the source.
       def source
-        @source ||= uri && Sources::Base.reload(uri)
+        @source ||= uri && Sources::Base.reload(uri, stored_metadata)
       end
       
       # Set the source.
@@ -268,7 +267,7 @@ module GroupSmarts # :nodoc:
             errors.add_to_base(source.error) unless valid
           end          
         end
-
+  
         # Process the source and load the resulting metadata.  No processing of the primary attachment should impede the creation of aspects.
         def process!
           if source && source.valid? && required_processing
@@ -286,7 +285,7 @@ module GroupSmarts # :nodoc:
             attributes.nil? ? Sources::Base::AvailableImageProcessing.include?(name) : attributes[:store]
           end
         end
-
+  
         # Returns the processing required for the attachment.
         def required_processing
           @source_updated && case
@@ -323,7 +322,7 @@ module GroupSmarts # :nodoc:
           _aspects.clear
           true
         end
-
+  
         # Store the attachment to the backend, if required, and trigger associated callbacks.
         # Sources are saved to the location identified by the uri attribute if the store attribute is set.
         def save_source
@@ -333,7 +332,7 @@ module GroupSmarts # :nodoc:
             self.source = Sources::Base.store(source, uri)
           end
         end
-
+  
         def destroy_source
           source.destroy 
         rescue MissingSource
@@ -351,6 +350,11 @@ module GroupSmarts # :nodoc:
             md[:filename] = data.original_filename if data.respond_to?(:original_filename) 
             md[:mime_type] = ::Mime::Type.lookup(data.content_type) if data.respond_to?(:content_type) 
           end
+        end
+        
+        # Extract stored metadata from attributes to enrichen a purely binary source to the same level as a CGI-supplied source. 
+        def stored_metadata
+          %w(filename mime_type).inject(Hash.new) {|hash, key| hash[key.to_sym] = self.send(key.to_sym);hash}
         end
     end
   end
