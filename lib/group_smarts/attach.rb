@@ -79,7 +79,6 @@ module GroupSmarts # :nodoc:
           before_save :save_source
           before_save :evaluate_custom_callbacks
           after_save :create_aspects
-          after_destroy :destroy_aspects
           after_destroy :destroy_source
           extend  ClassMethods
           include InstanceMethods
@@ -337,11 +336,6 @@ module GroupSmarts # :nodoc:
           source.destroy 
         rescue MissingSource
           true # If the source is missing, carry on.
-        end
-        
-        # Removes the aspects for the attachment, if it has any
-        def destroy_aspects
-          self.aspects(true).each { |a| a.destroy }
         end
         
         private
