@@ -229,7 +229,7 @@ module GroupSmarts # :nodoc:
       # Setter for URI.  Accepts a string representation of a URI, or a ::URI instance.
       def uri=(u)
         @uri = u && (u.kind_of?(::URI) ? u : ::URI.parse(u).normalize)
-        @uri && write_attribute(:uri, @uri.to_s)
+        write_attribute(:uri, @uri && @uri.to_s)
       end
       
       # Getter for MIME type.  Returns an instance of Mime::Type
@@ -237,12 +237,11 @@ module GroupSmarts # :nodoc:
         @mime_type ||= Mime::Type.lookup(read_attribute(:content_type))
       end
       
-      # Setter for Mime type.  Accepts a string representation of a Mime type, or a ::Mime::Type instance.
+      # Setter for MIME type.  Accepts a ::Mime::Type instance (for a string, use the content_type= setter and reset @mime_type)
       def mime_type=(mt)
-        # TODO: Scrap the ability to read a string -that's what the built-in setter on content_type is for.
-        # TODO: Convert this to a composed_of macro? 
-        @mime_type = mt && (mt.kind_of?(Mime::Type) ? mt : Mime::Type.lookup(mt))
-        @mime_type && write_attribute(:content_type, @mime_type.to_s)
+        # TODO: Convert this to a composed_of macro, but only when :constructor is available in all supported Rails versions.
+        @mime_type = mt
+        write_attribute(:content_type, @mime_type && @mime_type.to_s)
       end
       
       protected
