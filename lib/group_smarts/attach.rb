@@ -75,7 +75,6 @@ module GroupSmarts # :nodoc:
           delegate :blob, :to => :source
 
           before_validation :process!
-          before_validation :choose_storage
           before_save :save_source
           before_save :evaluate_custom_callbacks
           after_save :create_aspects
@@ -108,8 +107,6 @@ module GroupSmarts # :nodoc:
         validates_presence_of   :filename, :if => :local?
         validates_presence_of   :content_type
         validate                :valid_content_type?
-        validates_presence_of   :uri
-        validate                :valid_uri?
         validate                :valid_source?
         validates_inclusion_of  :size, :in => attachment_options[:size], :if => :local?
       end
@@ -254,14 +251,6 @@ module GroupSmarts # :nodoc:
           errors.add :content_type, ActiveRecord::Errors.default_error_messages[:inclusion] unless whitelist.nil? || whitelist.include?(self.content_type)
         end
         
-        def valid_uri?
-          begin
-            errors.add(:uri, "URI must be absolute.") unless uri
-          rescue
-            errors.add(:uri, "Can't be parsed") # Require that the string representation be parseable.
-          end
-        end
-        
         # Ensure source is valid, and if not, update the ActiveRecord errors object with the source error.
         def valid_source?
           source && returning(source.valid?) do |valid|
@@ -301,13 +290,6 @@ module GroupSmarts # :nodoc:
           end
         end
       
-        # Choose the storage URI.  Done early so that it may be validated and allow attachment data blobs to be stored before or after main attachment record.
-        def choose_storage
-          return unless source
-          self.uri = source.uri unless store
-          self.uri ||= self.class.storage_uri(uuid!, aspect, mime_type.to_sym)
-        end
-        
         # Create additional child attachments for each requested aspect.
         def create_aspects
           _aspects.each do |name, attrs|
@@ -323,9 +305,11 @@ module GroupSmarts # :nodoc:
         # Store the attachment to the backend, if required, and trigger associated callbacks.
         # Sources are saved to the location identified by the uri attribute if the store attribute is set.
         def save_source
+          raise "No source provided" unless source
+          self.uri = (!store && source.uri) || self.class.storage_uri(uuid!, aspect, mime_type.to_sym)
           if @source_updated && uri.host == 'localhost'
+            logger.debug "Attach: SAVE SOURCE    #{self} (#{source} @ #{source.uri}) to #{uri}:#{store}\n"
             @source_updated = nil # Indicate that no further storage is necessary.
-            logger.debug "Attach: SAVE SOURCE    #{self} (#{source} @ #{source.uri}) to #{uri}\n"
             self.source = Sources::Base.store(source, uri)
           end
         end
