@@ -104,6 +104,7 @@ class ModelTest < ActiveSupport::TestCase
       assert a.valid?, a.errors.full_messages.first
       assert_not_nil a.filename
       assert_equal "missingphoto.jpg", a.filename
+      assert_kind_of GroupSmarts::Attach::Sources::EXIFR, a.source # Confirm we optimistically fetched the source and extracted info
       assert_equal url, a.url
       assert_not_nil a.metadata
       assert_equal "800x600", a.image_size
@@ -231,6 +232,20 @@ class ModelTest < ActiveSupport::TestCase
     url = "http://www.rubyonrails.org/images/rails.png"
     attachments(:sss).update_attributes({:url => url})
     assert_equal url, attachments(:sss).url
+  end
+  
+  def test_update_attachment_updates_aspect
+    url = "http://www.rubyonrails.org/images/rails.png"
+    fn = attachments(:one_thumbnail).uri.path
+    assert File.exists?(fn)
+    a = attachments(:one)
+    a.update_attributes({:url => url})
+    assert a.valid?
+    assert_equal url, a.url
+    assert_equal url, a.uri.to_s
+    assert_equal 1, a.aspects.size
+    assert_not_equal fn, a.aspects.first.uri.path
+    assert !File.exists?(fn)
   end
   
   def test_create_aspect_post_facto

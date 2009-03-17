@@ -172,6 +172,8 @@ module GroupSmarts # :nodoc:
       def file=(upload)
         return unless upload
         self.store = true if store.nil?
+        destroy_source  # Discard any existing source
+        aspects.clear
         self.source = Sources::Base.load(upload, cgi_metadata(upload))
       end
       
@@ -184,6 +186,8 @@ module GroupSmarts # :nodoc:
       def url=(u)
         return unless u
         self.store = false if store.nil?
+        destroy_source  # Discard any existing source
+        aspects.clear
         self.source = Sources::Base.load(::URI.parse(u))
       end
       
@@ -201,7 +205,6 @@ module GroupSmarts # :nodoc:
         self.attributes = a
         @source = src
         @source_updated = true
-        @_aspects ||= attachment_options[:_aspects].dup || [] # Unless overridden, we need to update the aspects now that the source has changed.
       end
       
       # Allows you to work with a processed representation (RMagick, ImageScience, etc) of the attachment in a block.
@@ -218,7 +221,7 @@ module GroupSmarts # :nodoc:
       # Returns the array of aspects to be built for this attachment.
       def _aspects
         return [] if parent
-        @_aspects ||= []
+        @_aspects ||= attachment_options[:_aspects].dup || []
       end
       
       # Return an instance of ::URI that points to the attachment's data source.
@@ -268,7 +271,7 @@ module GroupSmarts # :nodoc:
   
         # Process the source and load the resulting metadata.  No processing of the primary attachment should impede the creation of aspects.
         def process!
-          if source && source.valid? && required_processing
+          if source && @source_updated && source.valid? && required_processing
             logger.debug "Attach: PROCESSING     #{self} (#{source} @ #{source.uri}) with #{required_processing}\n"
             self.source = Sources::Base.process(source, required_processing)
           end
@@ -307,15 +310,11 @@ module GroupSmarts # :nodoc:
         
         # Create additional child attachments for each requested aspect.
         def create_aspects
-          _aspects.each do |a|
+          _aspects.each do |name, attrs|
             raise(AspectError.new("Can't create an aspect of an aspect")) unless parent_id.nil?
-            name, attributes = *a
-            attributes ||= {:source => source}
+            attrs = (attrs || {:source => source}).merge({:aspect => name.to_s, :attachee => attachee, :_aspects => {}})
             logger.debug "Attach: CREATE ASPECT  #{self} (#{source} @ #{source.uri}) as #{name}\n"
-            returning aspects.find_or_initialize_by_aspect(name.to_s) do |_aspect|
-              _aspect.attributes = attributes.merge!({:attachee => attachee, :_aspects => {}})
-              _aspect.save!
-            end
+            a = aspects.create!(attrs)
           end
           _aspects.clear
           true
@@ -332,7 +331,7 @@ module GroupSmarts # :nodoc:
         end
   
         def destroy_source
-          source.destroy 
+          source && source.destroy
         rescue MissingSource
           true # If the source is missing, carry on.
         end
