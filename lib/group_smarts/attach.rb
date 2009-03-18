@@ -68,7 +68,7 @@ module GroupSmarts # :nodoc:
           attachment_options[:store] ||= Proc.new {|id, aspect, extension| "db://localhost/attachment_blobs/#{id}"}
 
           with_options :foreign_key => 'parent_id' do |m|
-            m.has_many   :aspects, :class_name => base_class.to_s, :dependent => :destroy
+            m.has_many   :aspects, :class_name => base_class.to_s, :dependent => :destroy, :extend => AspectsAssociation
             m.belongs_to :parent, :class_name => base_class.to_s
           end
           
@@ -284,10 +284,7 @@ module GroupSmarts # :nodoc:
       # Create additional child attachments for each requested aspect.
       def create_aspects
         _aspects.each do |name, attrs|
-          raise(AspectError.new("Can't create an aspect of an aspect")) unless parent_id.nil?
-          attrs = attrs.merge({:aspect => name.to_s, :attachee => attachee})
-          logger.debug "Attach: CREATE ASPECT  #{self} (#{source} @ #{source.uri}) as #{name}\n"
-          a = aspects.create!(attrs)
+          aspects.make(name, attrs)
         end
       end
 
@@ -320,6 +317,14 @@ module GroupSmarts # :nodoc:
       # Extract stored metadata from attributes to enrichen a purely binary source to the same level as a CGI-supplied source. 
       def stored_metadata
         %w(filename mime_type).inject(Hash.new) {|hash, key| hash[key.to_sym] = self.send(key.to_sym);hash}
+      end
+    end
+
+    module AspectsAssociation
+      def make(name, attrs)
+        raise(AspectError.new("Can't create an aspect of an aspect")) unless proxy_owner.parent_id.nil?
+        logger.debug "Attach: MAKE ASPECT   #{proxy_owner}->#{name}\n"
+        create!(attrs.merge({:aspect => name.to_s, :attachee => proxy_owner.attachee}))
       end
     end
   end
