@@ -246,81 +246,81 @@ module GroupSmarts # :nodoc:
       end
       
       protected
-        # validates the content_type attribute according to the current model's options
-        def valid_content_type?
-          whitelist = attachment_options[:content_type]
-          errors.add :content_type, ActiveRecord::Errors.default_error_messages[:inclusion] unless whitelist.nil? || whitelist.include?(self.content_type)
-        end
-        
-        # Ensure source is valid, and if not, update the ActiveRecord errors object with the source error.
-        def valid_source?
-          source && returning(source.valid?) do |valid|
-            errors.add_to_base(source.error) unless valid
-          end          
-        end
-  
-        # Process the source and load the resulting metadata.  No processing of the primary attachment should impede the creation of aspects.
-        def process!
-          if source && @source_updated && source.valid? && processing
-            logger.debug "Attach: PROCESSING     #{self} (#{source} @ #{source.uri}) with #{processing}\n"
-            self.source = Sources::Base.process(source, processing)
-          end
-          true
-        end
-        
-        # Returns true if the original attachment or any of its aspects require data for processing (best guess) or storing.
-        # Manually defined _aspects (via attribute) are assumed to not require data for processing unless the store attribute is also set.
-        def data_required?
-          store || image? && _aspects.any? do |name, attributes|
-            attributes.nil? ? Sources::Base::AvailableImageProcessing.include?(name) : attributes[:store]
-          end
-        end
-  
-        # Returns the specific processing required for this Attachment instance
-        def processing
-          @processing ||= image? && (resize ? :max : :info)
-        end
+      # validates the content_type attribute according to the current model's options
+      def valid_content_type?
+        whitelist = attachment_options[:content_type]
+        errors.add :content_type, ActiveRecord::Errors.default_error_messages[:inclusion] unless whitelist.nil? || whitelist.include?(self.content_type)
+      end
       
-        # Create additional child attachments for each requested aspect.
-        def create_aspects
-          _aspects.each do |name, attrs|
-            raise(AspectError.new("Can't create an aspect of an aspect")) unless parent_id.nil?
-            attrs = attrs.merge({:aspect => name.to_s, :attachee => attachee})
-            logger.debug "Attach: CREATE ASPECT  #{self} (#{source} @ #{source.uri}) as #{name}\n"
-            a = aspects.create!(attrs)
-          end
+      # Ensure source is valid, and if not, update the ActiveRecord errors object with the source error.
+      def valid_source?
+        source && returning(source.valid?) do |valid|
+          errors.add_to_base(source.error) unless valid
+        end          
+      end
+
+      # Process the source and load the resulting metadata.  No processing of the primary attachment should impede the creation of aspects.
+      def process!
+        if source && @source_updated && source.valid? && processing
+          logger.debug "Attach: PROCESSING     #{self} (#{source} @ #{source.uri}) with #{processing}\n"
+          self.source = Sources::Base.process(source, processing)
         end
-  
-        # Store the attachment to the backend, if required, and trigger associated callbacks.
-        # Sources are saved to the location identified by the uri attribute if the store attribute is set.
-        def save_source
-          raise "No source provided" unless source
-          self.uri = (!store && source.uri) || self.class.storage_uri(uuid!, aspect, mime_type.to_sym)
-          if @source_updated && uri.host == 'localhost'
-            logger.debug "Attach: SAVE SOURCE    #{self} (#{source} @ #{source.uri}) to #{uri}:#{store}\n"
-            @source_updated = nil # Indicate that no further storage is necessary.
-            self.source = Sources::Base.store(source, uri)
-          end
+        true
+      end
+      
+      # Returns true if the original attachment or any of its aspects require data for processing (best guess) or storing.
+      # Manually defined _aspects (via attribute) are assumed to not require data for processing unless the store attribute is also set.
+      def data_required?
+        store || image? && _aspects.any? do |name, attributes|
+          attributes.nil? ? Sources::Base::AvailableImageProcessing.include?(name) : attributes[:store]
         end
-  
-        def destroy_source
-          source && source.destroy
-        rescue MissingSource
-          true # If the source is missing, carry on.
+      end
+
+      # Returns the specific processing required for this Attachment instance
+      def processing
+        @processing ||= image? && (resize ? :max : :info)
+      end
+    
+      # Create additional child attachments for each requested aspect.
+      def create_aspects
+        _aspects.each do |name, attrs|
+          raise(AspectError.new("Can't create an aspect of an aspect")) unless parent_id.nil?
+          attrs = attrs.merge({:aspect => name.to_s, :attachee => attachee})
+          logger.debug "Attach: CREATE ASPECT  #{self} (#{source} @ #{source.uri}) as #{name}\n"
+          a = aspects.create!(attrs)
         end
-        
-        private
-        def cgi_metadata(data)
-          returning(Hash.new) do |md|
-            md[:filename] = data.original_filename if data.respond_to?(:original_filename) 
-            md[:mime_type] = ::Mime::Type.lookup(data.content_type) if data.respond_to?(:content_type) 
-          end
+      end
+
+      # Store the attachment to the backend, if required, and trigger associated callbacks.
+      # Sources are saved to the location identified by the uri attribute if the store attribute is set.
+      def save_source
+        raise "No source provided" unless source
+        self.uri = (!store && source.uri) || self.class.storage_uri(uuid!, aspect, mime_type.to_sym)
+        if @source_updated && uri.host == 'localhost'
+          logger.debug "Attach: SAVE SOURCE    #{self} (#{source} @ #{source.uri}) to #{uri}:#{store}\n"
+          @source_updated = nil # Indicate that no further storage is necessary.
+          self.source = Sources::Base.store(source, uri)
         end
-        
-        # Extract stored metadata from attributes to enrichen a purely binary source to the same level as a CGI-supplied source. 
-        def stored_metadata
-          %w(filename mime_type).inject(Hash.new) {|hash, key| hash[key.to_sym] = self.send(key.to_sym);hash}
+      end
+
+      def destroy_source
+        source && source.destroy
+      rescue MissingSource
+        true # If the source is missing, carry on.
+      end
+      
+      private
+      def cgi_metadata(data)
+        returning(Hash.new) do |md|
+          md[:filename] = data.original_filename if data.respond_to?(:original_filename) 
+          md[:mime_type] = ::Mime::Type.lookup(data.content_type) if data.respond_to?(:content_type) 
         end
+      end
+      
+      # Extract stored metadata from attributes to enrichen a purely binary source to the same level as a CGI-supplied source. 
+      def stored_metadata
+        %w(filename mime_type).inject(Hash.new) {|hash, key| hash[key.to_sym] = self.send(key.to_sym);hash}
+      end
     end
   end
 end
