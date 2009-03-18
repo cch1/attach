@@ -63,6 +63,7 @@ module GroupSmarts # :nodoc:
           attr_accessor :resize, :iconify
           attr_accessor :store  # indicates whether or not to store attachment data.  Set to false to not store data and instead use a remote reference
           attr_writer :_aspects # Array or Hash of aspects to create.  Set to an empty array to not create any aspects.
+          attr_writer :processing # Queue of transformations to apply to the attachment.
 
           attachment_options[:store] ||= Proc.new {|id, aspect, extension| "db://localhost/attachment_blobs/#{id}"}
 
@@ -215,10 +216,10 @@ module GroupSmarts # :nodoc:
         yield source.image
       end
 
-      # Returns the array of aspects to be built for this attachment.
+      # Returns the hash of aspects to be built for this attachment.
       def _aspects
         return [] if parent
-        @_aspects ||= attachment_options[:_aspects].dup || []
+        (@_aspects ||= attachment_options[:_aspects]).inject({}) { |m,(k,v)| m[k] = v || {:processing => k, :source => source}; m } || []
       end
       
       # Return an instance of ::URI that points to the attachment's data source.
@@ -260,9 +261,9 @@ module GroupSmarts # :nodoc:
   
         # Process the source and load the resulting metadata.  No processing of the primary attachment should impede the creation of aspects.
         def process!
-          if source && @source_updated && source.valid? && required_processing
-            logger.debug "Attach: PROCESSING     #{self} (#{source} @ #{source.uri}) with #{required_processing}\n"
-            self.source = Sources::Base.process(source, required_processing)
+          if source && @source_updated && source.valid? && processing
+            logger.debug "Attach: PROCESSING     #{self} (#{source} @ #{source.uri}) with #{processing}\n"
+            self.source = Sources::Base.process(source, processing)
           end
           true
         end
@@ -275,30 +276,19 @@ module GroupSmarts # :nodoc:
           end
         end
   
-        # Returns the processing required for the attachment.
-        def required_processing
-          @source_updated && case
-            when store && image? && resize
-              resize
-            when aspect && image? && Sources::Base::AvailableImageProcessing.include?(aspect.to_sym)
-              aspect
-            when aspect && iconify
-              :iconify
-            when !aspect && data_required?  # Opportunistically extract bonus metadata for original attachment if the source data is/will be required.
-              :info
-          end
+        # Returns the specific processing required for this Attachment instance
+        def processing
+          @processing ||= image? && (resize ? :max : :info)
         end
       
         # Create additional child attachments for each requested aspect.
         def create_aspects
           _aspects.each do |name, attrs|
             raise(AspectError.new("Can't create an aspect of an aspect")) unless parent_id.nil?
-            attrs = (attrs || {:source => source}).merge({:aspect => name.to_s, :attachee => attachee, :_aspects => {}})
+            attrs = attrs.merge({:aspect => name.to_s, :attachee => attachee})
             logger.debug "Attach: CREATE ASPECT  #{self} (#{source} @ #{source.uri}) as #{name}\n"
             a = aspects.create!(attrs)
           end
-          _aspects.clear
-          true
         end
   
         # Store the attachment to the backend, if required, and trigger associated callbacks.
