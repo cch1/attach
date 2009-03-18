@@ -270,8 +270,7 @@ module GroupSmarts # :nodoc:
         # Returns true if the original attachment or any of its aspects require data for processing (best guess) or storing.
         # Manually defined _aspects (via attribute) are assumed to not require data for processing unless the store attribute is also set.
         def data_required?
-          store || image? && _aspects.any? do |a|
-            name, attributes = *a
+          store || image? && _aspects.any? do |name, attributes|
             attributes.nil? ? Sources::Base::AvailableImageProcessing.include?(name) : attributes[:store]
           end
         end
