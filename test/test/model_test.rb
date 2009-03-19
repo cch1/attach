@@ -227,6 +227,14 @@ class ModelTest < ActiveSupport::TestCase
     assert_equal Time.parse('Sat, 28 Nov 1998 11:39:37 -0500'), a.metadata[:time].to_time
   end
   
+  def test_explicit_iconify_on_new
+    a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/ManagingAgileProjects.pdf', 'application/pdf', :binary), :_aspects => [:icon])
+    assert_equal 1, a.aspects.size
+    assert i = a.aspects.find_by_aspect('icon')
+    assert_match /application_pdf\.png/, i.uri.path
+    assert_nil i.uri.scheme
+  end
+  
   def test_update
     url = "http://www.rubyonrails.org/images/rails.png"
     attachments(:sss).update_attributes({:url => url})

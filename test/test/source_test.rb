@@ -176,4 +176,11 @@ class SourceTest < ActiveSupport::TestCase
     assert s.metadata[:time].is_a?(Time)
     assert_equal Time.parse('Sat, 28 Nov 1998 11:39:37 -0500'), s.metadata[:time].to_time
   end
+  
+  def test_process_with_icon
+    s = GroupSmarts::Attach::Sources::Base.load(fixture_file_upload('attachments/empty.txt', 'text/plain', :binary))
+    assert s = GroupSmarts::Attach::Sources::Base.process(s, :icon)
+    assert_kind_of GroupSmarts::Attach::Sources::LocalAsset, s
+    assert_match /.*mime_type_icons.text_plain\.png/, s.uri.path
+  end
 end

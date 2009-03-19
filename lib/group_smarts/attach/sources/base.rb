@@ -15,6 +15,8 @@ module GroupSmarts # :nodoc:
         
         attr_reader :error, :data
         
+        extend ActionView::Helpers::AssetTagHelper
+
         # Loads data from a primary source with bonus/primer metadata.  Primary sources can be either rich sources (capable of supplying raw 
         # attachment data and metadata) or simple sources (only able to provide raw data).  Every storage source should also be a primary source. 
         def self.load(raw_source = nil, metadata = {})
@@ -54,7 +56,7 @@ module GroupSmarts # :nodoc:
         def self.process(source, transform = :identity)
           transform = transform.to_sym
           case transform
-            when :iconify then Sources::Http.new(::URI.parse('http://www.iconspedia.com/uploads/1537420179.png'))
+            when :icon then Sources::LocalAsset.new(::URI.parse(icon_path(source.mime_type)), {:mime_type => :png})
 #              when :thumbshot then Source::Thumbshooter.new(source).process()
 #              when :sample then Source::MPEGSampler.new(source).process()
             when *Sources::Rmagick::StandardImageGeometry.keys
@@ -77,6 +79,11 @@ module GroupSmarts # :nodoc:
             when 'db' then Sources::ActiveRecord.store(source, uri)
             else raise "Don't know how to store to #{uri}."
           end
+        end
+
+        def self.icon_path(mt)
+          name = mt.to_s.gsub('/', '_')
+          image_path("mime_type_icons/#{name}.png")
         end
         
         def initialize(d = nil, m = nil)

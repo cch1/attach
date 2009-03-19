@@ -4,6 +4,7 @@
 # Mime::Type.register "text/richtext", :rtf
 # Mime::Type.register_alias "text/html", :iphone
 Mime::Type.register 'application/xrds+xml', :xrds
+Mime::Type.register 'application/pdf', :pdf
 Mime::Type.register_alias "text/html", :openid
 # Image Types
 Mime::Type.register 'image/jpeg', :jpg, ['image/jpg'], ['jpeg']
