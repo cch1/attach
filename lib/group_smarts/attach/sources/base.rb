@@ -24,6 +24,7 @@ module GroupSmarts # :nodoc:
             when ::URI  # raw source is actually a reference to an external source
               case raw_source.scheme
                 when 'http', 'https' then Sources::Http.new(raw_source, metadata)
+                when nil then Sources::LocalAsset.new(raw_source, metadata)
                 else raise "Source for scheme '#{raw_source.scheme}' not supported for loading."
               end
             when ::File then Sources::File.new(raw_source, metadata)
@@ -44,6 +45,7 @@ module GroupSmarts # :nodoc:
             when 'db' then Sources::ActiveRecord.reload(uri, metadata)
             when 'file', NilClass then Sources::File.reload(uri, metadata)
             when 's3' then Sources::S3.reload(uri, metadata)
+            when nil then Sources::LocalAsset.new(uri, metadata)
             else raise "Source for scheme '#{uri.scheme}' not supported for reloading."
           end
         end

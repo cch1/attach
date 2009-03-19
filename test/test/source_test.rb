@@ -2,7 +2,8 @@ require File.dirname(__FILE__) + '/test_helper.rb'
 
 class SourceTest < ActiveSupport::TestCase
   include ActionController::TestProcess
-  UUID_RE = /[[:xdigit:]]{8}[:-][[:xdigit:]]{4}[:-][[:xdigit:]]{4}[:-][[:xdigit:]]{4}[:-][[:xdigit:]]{12}/
+
+  include ActionView::Helpers::AssetTagHelper
 
   fixtures :users, :attachments, :attachment_blobs
 
@@ -74,6 +75,25 @@ class SourceTest < ActiveSupport::TestCase
     assert_equal "image/png", s.mime_type.to_s
     assert_nil s.digest # This resource is not served with a rich HTTP header
     assert_equal 16531, s.size
+  end
+  
+  def test_load_source_from_local_asset
+    uri = URI.parse(image_path('logo.gif'))
+    s = GroupSmarts::Attach::Sources::Base.load(uri)
+    assert_instance_of GroupSmarts::Attach::Sources::LocalAsset, s
+    assert s.valid?
+    # Check data
+    assert_kind_of ::Tempfile, s.tempfile
+    assert_kind_of ::File, s.io
+    assert_kind_of ::String, s.blob
+    # Check metadata
+    assert s.metadata
+    assert_not_nil s.uri
+    assert_equal uri, s.uri
+    assert_equal 'logo.gif', s.filename
+    assert_nil s.mime_type # File's MIME type is indeterminate
+    assert_equal "Nlmsf6jL1y031dv5yaI3Ew==", Base64.encode64(s.digest).chomp! # This resource is not served with a rich HTTP header
+    assert_equal 14762, s.size
   end
 
   def test_store_source_to_file
