@@ -45,7 +45,7 @@ module GroupSmarts # :nodoc:
             when 'http', 'https' then Sources::Http.new(uri, metadata)
             # Following operations use URI to load a persisted source from storage
             when 'db' then Sources::ActiveRecord.reload(uri, metadata)
-            when 'file', NilClass then Sources::File.reload(uri, metadata)
+            when 'file' then Sources::File.reload(uri, metadata)
             when 's3' then Sources::S3.reload(uri, metadata)
             when nil then Sources::LocalAsset.new(uri, metadata)
             else raise "Source for scheme '#{uri.scheme}' not supported for reloading."

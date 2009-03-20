@@ -145,6 +145,14 @@ class SourceTest < ActiveSupport::TestCase
     end
   end
 
+  def test_reload_source_from_local_asset_uri
+    uri = URI.parse(image_path('logo.gif'))
+    s = GroupSmarts::Attach::Sources::Base.reload(uri)
+    assert_kind_of GroupSmarts::Attach::Sources::LocalAsset, s
+    assert_equal 14762, s.size
+    assert_equal uri, s.uri
+  end
+
   def test_destroy_db_backed_source
     id = Fixtures.identify('one')
     uri = ::URI.parse("db://localhost").merge(::URI.parse(id.to_s))
