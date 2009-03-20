@@ -49,6 +49,7 @@ module GroupSmarts # :nodoc:
         options[:_aspects]         ||= []
         options[:s3_access]        ||= :public_read
         options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? GroupSmarts::Attach.image_content_types : t }.flatten unless options[:content_type].nil?
+        options[:store]            ||= Proc.new {|i, a, e| "file://localhost#{::File.join(RAILS_ROOT, 'public', 'attachments', [[i,a].compact.join('_'), e].join('.'))}"}
         
         unless options[:_aspects].is_a?(Array)
           raise ArgumentError, ":The aspects option should be an array: e.g. :aspects => [:thumbnail, :proof]"
@@ -118,7 +119,8 @@ module GroupSmarts # :nodoc:
       end
       
       # Builds a URI where the attachment should be stored 
-      def storage_uri(id, aspect, extension)
+      def storage_uri(id, aspect, mt)
+        extension = mt.to_sym.to_s.gsub('/', '_') rescue nil
         ::URI.parse(attachment_options[:store].call(id, aspect, extension))
       end
     end
@@ -292,7 +294,7 @@ module GroupSmarts # :nodoc:
       # Sources are saved to the location identified by the uri attribute if the store attribute is set.
       def save_source
         raise "No source provided" unless source
-        self.uri = (!store && source.uri) || self.class.storage_uri(uuid!, aspect, mime_type.to_sym)
+        self.uri = (!store && source.uri) || self.class.storage_uri(uuid!, aspect, mime_type)
         if @source_updated && uri.host == 'localhost'
           logger.debug "Attach: SAVE SOURCE    #{self} (#{source} @ #{source.uri}) to #{uri}:#{store}\n"
           @source_updated = nil # Indicate that no further storage is necessary.

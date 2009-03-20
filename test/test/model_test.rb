@@ -11,9 +11,11 @@ class ModelTest < ActiveSupport::TestCase
   def setup
     FileUtils.mkdir Attachment::FILE_STORE
     FileUtils.cp_r File.join(FIXTURE_FILE_STORE, '.'), Attachment::FILE_STORE
+    @ao = Attachment.attachment_options.dup
   end
 
   def teardown
+    Attachment.attachment_options = @ao
     FileUtils.rm_rf Attachment::FILE_STORE
   end
 
@@ -63,6 +65,7 @@ class ModelTest < ActiveSupport::TestCase
   end
 
   def test_create_system_attachment_via_file_with_default_aspect
+    Attachment.attachment_options[:_aspects] = [:thumbnail]
     assert_difference 'Attachment.count', 2 do
       a = Attachment.create(:attachee => users(:pascale), :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary))
       assert a.valid?, a.errors.full_messages.first
@@ -97,6 +100,7 @@ class ModelTest < ActiveSupport::TestCase
   end
 
   def test_create_attachment_via_url_with_default_aspects
+    Attachment.attachment_options[:_aspects] = [:thumbnail]
     assert_difference 'Attachment.count', 2 do
       url = 'http://www.memoryminer.com/graphics/missingphoto.jpg'
       a = Attachment.create(:attachee => users(:chris), :url => url)
@@ -242,6 +246,7 @@ class ModelTest < ActiveSupport::TestCase
   end
   
   def test_update_attachment_updates_aspect
+    Attachment.attachment_options[:_aspects] = [:thumbnail]
     url = "http://www.rubyonrails.org/images/rails.png"
     fn = attachments(:one_thumbnail).uri.path
     assert File.exists?(fn)
@@ -264,5 +269,12 @@ class ModelTest < ActiveSupport::TestCase
     assert_equal "*proof", a.aspect
     assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(a.digest).chomp!  # Digest::MD5.digest(File.read('test/fixtures/attachments/SperrySlantStar.bmp'))
     assert_equal 4534, a.size
+  end
+
+  def test_generate_reasonable_storage_uri_even_with_unreasonable_attributes
+    a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/ManagingAgileProjects.pdf', 'example/example', :binary), :_aspects => [])
+    p = Pathname.new(a.uri.path)
+    assert_operator 128, :>, p.to_s.size
+    assert_no_match /example\/example/, p.to_s  # make sure bogus Mime::Type does not appear literally in path.
   end
 end
