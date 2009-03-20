@@ -169,6 +169,14 @@ class SourceTest < ActiveSupport::TestCase
     assert !File.readable?(path)
   end
   
+  def test_destroy_local_asset_source
+    path = File.join(FILE_STORE, 'rails.png')
+    uri = URI.parse(path)
+    s = GroupSmarts::Attach::Sources::Base.reload(uri)
+    s.destroy
+    assert File.readable?(path)
+  end
+  
   def test_process_thumbnail_with_rmagick
     s = GroupSmarts::Attach::Sources::Base.load(fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary))
     assert s = GroupSmarts::Attach::Sources::Base.process(s, :thumbnail)

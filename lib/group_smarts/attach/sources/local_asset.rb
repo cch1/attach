@@ -19,10 +19,15 @@ module GroupSmarts # :nodoc:
           ::File.size fn
         end
         
+        # =State Transitions=
+        def destroy
+          # Do nothing -a local asset should outlive any referencing source and its associated attachment.
+        end
+
         private
         # Returns the absolute path of the asset
         def fn
-          ::File.join(RAILS_ROOT, 'public', uri.path) 
+          ::File.join(RAILS_ROOT, 'public', uri.path)
         end
         
         def file
