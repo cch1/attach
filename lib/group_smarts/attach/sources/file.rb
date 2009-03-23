@@ -26,13 +26,18 @@ module GroupSmarts # :nodoc:
         # =Metadata=
         # Construct a URI using the file scheme.
         def uri
-          @uri ||= URI.parse("file://localhost").merge(URI.parse(file.path))
+          @uri ||= URI.parse("file://localhost").merge(URI.parse(fn))
         end
         
         # Returns a file name suitable for this source when saved in a persistent file.
         # This is a fallback as the basename can be cryptic in many case.
         def filename
-          @metadata[:filename] || ::File.basename(file.path)
+          @metadata[:filename] || ::File.basename(fn)
+        end
+
+        # As a fallback, guess at the MIME type of the file using the extension.
+        def mime_type
+          @metadata[:mime_type] || Mime::Type.lookup_by_extension(::File.extname(fn)[1..-1])
         end
 
         # =Data=
@@ -65,7 +70,7 @@ module GroupSmarts # :nodoc:
 
         private
         def fn
-          uri.path
+          @data.path
         end
 
         def file

@@ -52,7 +52,7 @@ class SourceTest < ActiveSupport::TestCase
     assert_not_nil s.uri
     assert_equal "file://localhost#{f.path}", s.uri.to_s
     assert_equal 'SperrySlantStar.bmp', s.filename
-    assert_nil s.mime_type # File's MIME type is indeterminate
+    assert_equal 'image/bmp', s.mime_type.to_s # File's MIME type is guessed from extension
     assert_not_nil s.digest
     assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(s.digest).chomp!  # Base64.encode64(Digest::MD5.digest(File.read('test/fixtures/attachments/SperrySlantStar.bmp'))).chomp!
     assert_equal 4534, s.size
@@ -91,7 +91,7 @@ class SourceTest < ActiveSupport::TestCase
     assert_not_nil s.uri
     assert_equal uri, s.uri
     assert_equal 'logo.gif', s.filename
-    assert_nil s.mime_type # File's MIME type is indeterminate
+    assert_equal 'image/gif', s.mime_type.to_s # File's MIME type is guessed from extension
     assert_equal "Nlmsf6jL1y031dv5yaI3Ew==", Base64.encode64(s.digest).chomp! # This resource is not served with a rich HTTP header
     assert_equal 14762, s.size
   end
@@ -197,6 +197,7 @@ class SourceTest < ActiveSupport::TestCase
     s = GroupSmarts::Attach::Sources::Base.load(fixture_file_upload('attachments/empty.txt', 'text/plain', :binary))
     assert s = GroupSmarts::Attach::Sources::Base.process(s, :icon)
     assert_kind_of GroupSmarts::Attach::Sources::LocalAsset, s
-    assert_match /.*mime_type_icons.text_plain\.png/, s.uri.path
+    assert_equal 'image/png', s.mime_type.to_s
+    assert_match /(\/.*)+\/mime_type_icons.text_plain\.png/, s.uri.path
   end
 end

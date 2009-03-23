@@ -56,7 +56,7 @@ module GroupSmarts # :nodoc:
         def self.process(source, transform = :identity)
           transform = transform.to_sym
           case transform
-            when :icon then Sources::LocalAsset.new(::URI.parse(icon_path(source.mime_type)), {:mime_type => :png})
+            when :icon then Sources::LocalAsset.new(::URI.parse(icon_path(source.mime_type)))
 #              when :thumbshot then Source::Thumbshooter.new(source).process()
 #              when :sample then Source::MPEGSampler.new(source).process()
             when *Sources::Rmagick::StandardImageGeometry.keys
