@@ -2,23 +2,11 @@ module GroupSmarts # :nodoc:
   module Attach # :nodoc:
     module Sources
       class LocalAsset < GroupSmarts::Attach::Sources::File
-        attr_reader :uri
-        def initialize(uri, m = {})
-          super
-          @uri = @data
-        end
-
         # =Metadata=
-        # Returns a filename suitable for naming this attachment.
-        def filename
-          fn.split('/')[-1]
+        def uri
+          @data
         end
 
-        # Returns the size of the source in bytes.
-        def size
-          ::File.size fn
-        end
-        
         # =State Transitions=
         def destroy
           # Do nothing -a local asset should outlive any referencing source and its associated attachment.

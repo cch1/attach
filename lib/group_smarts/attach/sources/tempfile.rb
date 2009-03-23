@@ -9,27 +9,11 @@ module GroupSmarts # :nodoc:
           nil
         end
         
-        # Returns the MIME::Type of source.
-        def mime_type
-          @mime_type ||= Mime::Type.lookup_by_extension(filename.split('.')[-1])
-          super || @mime_type
-        end
-        
         # =Data=
-        # Returns the source's data as a blob string.  WARNING: Performance problems can result if the source is large
-        def blob
-          tempfile.read
-        end
-
         # Trivial short-circuit that returns the rewind tempfile itself.
         def tempfile
           @data.rewind
           @data
-        end
-
-        # Returns the rewound IO instance that we are proxying.
-        def io
-          tempfile
         end
       end
     end
