@@ -23,8 +23,12 @@ class Attachment < ActiveRecord::Base
     end
   end
   
-  def before_save_aspect
-#    self.attachee = parent.attachee
+  before_save_attachment do |a|
+    a.description ||= "Default Attachment Description"
+  end
+
+  before_save_aspect do |a|
+    a.description ||= "Default Aspect Description"
   end
 
   # Return a unique id used to tag this attachment's data.

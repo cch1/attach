@@ -275,13 +275,11 @@ class ModelTest < ActiveSupport::TestCase
     assert_no_match /example\/example/, p.to_s  # make sure bogus Mime::Type does not appear literally in path.
   end
   
-  def test_before_save_aspect_callback
-    Attachment.attachment_options[:_aspects] = [:thumbnail]
-    assert_difference 'Attachment.count', 2 do
-      a = Attachment.create(:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary))
-      assert a.valid?, a.errors.full_messages.first
-      assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(a.digest).chomp!  # Digest::MD5.digest(File.read('test/fixtures/attachments/SperrySlantStar.bmp'))
-      assert_equal 4534, a.size
-    end    
+  def test_before_save_callback
+    a = Attachment.create(:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary), :_aspects => [:thumbnail])
+    assert a.valid?, a.errors.full_messages.first
+    assert_equal "Default Attachment Description", a.description
+    assert t = a.aspects.find_by_aspect('thumbnail')
+    assert_equal "Default Aspect Description", t.description
   end
 end
