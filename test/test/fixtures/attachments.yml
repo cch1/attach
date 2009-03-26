@@ -23,8 +23,6 @@ one:
   metadata: ~
   description: My Description
   parent: ~
-  attachee: chris (User)
-
 one_thumbnail:
   uri: <%= Attachment.storage_uri('plus', 'thumbnail', :png) %>
   content_type: image/png
@@ -35,8 +33,6 @@ one_thumbnail:
   metadata: ~
   description: ~
   parent: one
-  attachee: chris (User)
-
 two:
   uri: <%= Attachment.storage_uri('rails', nil, :png) %>
   content_type: image/png
@@ -47,8 +43,6 @@ two:
   metadata: "<%= {:time => DateTime.parse('Mon, 16 Nov 1998 11:39:37 +0000')}.to_yaml %>"
   description: ~
   parent: ~
-  attachee: chris (User)
-
 sss:
   uri: <%= Attachment.storage_uri('SperrySlantStar', nil, :bmp) %>
   content_type: image/bmp
@@ -59,7 +53,6 @@ sss:
   metadata: ~
   description: ~
   parent: ~
-  attachee: chris (User)
 remote:
   uri: http://cho.hapgoods.com/icons/powered_by_fedora.png
   content_type: image/png
@@ -70,4 +63,3 @@ remote:
   metadata: ~
   description: ~
   parent: ~
-  attachee: chris (User)

@@ -21,7 +21,7 @@ class ModelTest < ActiveSupport::TestCase
 
   def test_create_attachment_via_file_with_no_aspects
     assert_difference 'Attachment.count' do
-      a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary), :_aspects => [])
+      a = Attachment.create(:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary), :_aspects => [])
       assert a.valid?, a.errors.full_messages.first
       assert_equal 'SperrySlantStar.bmp', a.filename
       assert_not_nil a.digest
@@ -35,7 +35,7 @@ class ModelTest < ActiveSupport::TestCase
   
   def test_create_with_empty_file
     assert_difference 'Attachment.count' do
-      a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/empty.txt', 'text/plain'), :_aspects => [])
+      a = Attachment.create(:file => fixture_file_upload('attachments/empty.txt', 'text/plain'), :_aspects => [])
       assert a.valid?, a.errors.full_messages.first  # Attachment.attachment_options
       assert_equal 'empty.txt', a.filename
       assert_not_nil a.digest
@@ -57,7 +57,7 @@ class ModelTest < ActiveSupport::TestCase
   def test_create_attachment_via_url_with_no_aspects
     url = "http://cho.hapgoods.com/wordpress"
     assert_difference 'Attachment.count' do
-      a = Attachment.create(:attachee => users(:chris), :url => url, :_aspects => [])
+      a = Attachment.create(:url => url, :_aspects => [])
       assert a.valid?, a.errors.full_messages.first
       assert_equal url, a.url
       assert a.aspects.empty?
@@ -67,9 +67,8 @@ class ModelTest < ActiveSupport::TestCase
   def test_create_system_attachment_via_file_with_default_aspect
     Attachment.attachment_options[:_aspects] = [:thumbnail]
     assert_difference 'Attachment.count', 2 do
-      a = Attachment.create(:attachee => users(:pascale), :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary))
+      a = Attachment.create(:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary))
       assert a.valid?, a.errors.full_messages.first
-      assert users(:pascale).attachments.first.valid?
       assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(a.digest).chomp!  # Digest::MD5.digest(File.read('test/fixtures/attachments/SperrySlantStar.bmp'))
       assert_equal 4534, a.size
     end
@@ -77,7 +76,7 @@ class ModelTest < ActiveSupport::TestCase
 
   def test_create_attachment_via_file_with_explicit_aspects
     assert_difference 'Attachment.count', 2 do
-      a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary), :_aspects => [:thumbnail])
+      a = Attachment.create(:file => fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary), :_aspects => [:thumbnail])
       assert a.valid?, a.errors.full_messages.first
       assert_equal 'NxzAvUsuKjk8tPhbnbgLjQ==', Base64.encode64(a.digest).chomp! # Base64.encode64(Digest::MD5.digest(File.read('test/fixtures/attachments/AlexOnBMW#4.jpg')))
       assert_equal "320x256", a.image_size
@@ -94,8 +93,6 @@ class ModelTest < ActiveSupport::TestCase
       assert_equal 102, aspect.metadata[:height]
       assert_operator 4616..4636, :include?, aspect.size
       assert_operator 4616..4636, :include?, aspect.blob.size
-      assert aspect.attachee
-      assert_equal users(:chris), aspect.attachee
     end
   end
 
@@ -103,7 +100,7 @@ class ModelTest < ActiveSupport::TestCase
     Attachment.attachment_options[:_aspects] = [:thumbnail]
     assert_difference 'Attachment.count', 2 do
       url = 'http://www.memoryminer.com/graphics/missingphoto.jpg'
-      a = Attachment.create(:attachee => users(:chris), :url => url)
+      a = Attachment.create(:url => url)
       assert a.valid?, a.errors.full_messages.first
       assert_not_nil a.filename
       assert_equal "missingphoto.jpg", a.filename
@@ -121,7 +118,7 @@ class ModelTest < ActiveSupport::TestCase
 
   def test_create_attachment_via_url_with_aspect_url
     assert_difference 'Attachment.count', 2 do
-      a = Attachment.create(:attachee => users(:chris), :url => 'http://cho.hapgoods.com/icons/powered_by_fedora.png', :_aspects => {:thumbnail => {:url => 'http://cho.hapgoods.com/icons/apache_pb2.gif'}})
+      a = Attachment.create(:url => 'http://cho.hapgoods.com/icons/powered_by_fedora.png', :_aspects => {:thumbnail => {:url => 'http://cho.hapgoods.com/icons/apache_pb2.gif'}})
       assert a.valid?, a.errors.full_messages.first
       assert_equal 3034, a.size
       assert_kind_of GroupSmarts::Attach::Sources::Http, a.source # Confirm we didn't fetch the source
@@ -131,7 +128,7 @@ class ModelTest < ActiveSupport::TestCase
 
   def test_create_attachment_via_url_with_aspect_file
     assert_difference 'Attachment.count', 2 do
-      a = Attachment.create(:attachee => users(:chris), :url => 'http://cho.hapgoods.com/wordpress/', :_aspects => {:thumbnail => {:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)}})
+      a = Attachment.create(:url => 'http://cho.hapgoods.com/wordpress/', :_aspects => {:thumbnail => {:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)}})
       assert a.valid?, a.errors.full_messages.first
       assert a.aspects.any?
     end
@@ -141,7 +138,7 @@ class ModelTest < ActiveSupport::TestCase
   # Also state variables (store, _aspects) in the attach instance methods are tricky to keep in sync during assignment.
   def test_validation_independence
     assert_nothing_raised do
-      a = Attachment.new(:attachee => users(:chris), :file => fixture_file_upload('/attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary))
+      a = Attachment.new(:file => fixture_file_upload('/attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary))
       assert a.valid?
       a.save!
     end
@@ -149,14 +146,14 @@ class ModelTest < ActiveSupport::TestCase
 
   def test_create_attachment_with_malformed_url
     assert_raises URI::InvalidURIError do
-      a = Attachment.create(:attachee => users(:chris), :url => "http://")
+      a = Attachment.create(:url => "http://")
     end
   end
 
   # Should only create one attachment as the URL could not be retrieved and thus the default aspects are not built.
   def test_create_attachment_with_preloaded_data
     assert_difference 'Attachment.count', 1 do
-      a = Attachment.create(:attachee => users(:chris), :uri => "http:/www.memoryminer.com/bogusresource.jpg", :size => 10240, :content_type => 'image/jpg', :_aspects => [])
+      a = Attachment.create(:uri => "http:/www.memoryminer.com/bogusresource.jpg", :size => 10240, :content_type => 'image/jpg', :_aspects => [])
     end
   end
 
@@ -164,14 +161,14 @@ class ModelTest < ActiveSupport::TestCase
   def test_create_attachment_with_preloaded_data_and_aspect
     assert_difference 'Attachment.count', 2 do
       tparms = {:thumbnail => {:uri => "http://www.memoryminer.com/bogusresource-t.jpg", :size => 1024, :content_type => 'image/jpg'}}
-      aparms = {:attachee => users(:chris), :uri => "http://www.memoryminer.com/bogusresource.jpg", :size => 10240, :content_type => 'image/jpg', :_aspects => tparms}
+      aparms = {:uri => "http://www.memoryminer.com/bogusresource.jpg", :size => 10240, :content_type => 'image/jpg', :_aspects => tparms}
       a = Attachment.create(aparms)
     end
   end
 
   def test_source_required_on_save
     assert_no_difference 'Attachment.count' do
-      a = Attachment.new({:attachee => users(:chris)})
+      a = Attachment.new({})
       a.save
       assert a.errors.any?
     end
@@ -180,7 +177,7 @@ class ModelTest < ActiveSupport::TestCase
   def test_single_source_required
     assert_no_difference 'Attachment.count' do
       assert_raise RuntimeError do
-        a = Attachment.new({:attachee => users(:chris), :url => 'http://www.memoryminer.com/', :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)})
+        a = Attachment.new({:url => 'http://www.memoryminer.com/', :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)})
         a.save
       end
     end
@@ -226,13 +223,13 @@ class ModelTest < ActiveSupport::TestCase
   end
 
   def test_info_on_new
-    a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary), :_aspects => {})
+    a = Attachment.create(:file => fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary), :_aspects => {})
     assert a.metadata[:time].is_a?(Time)
     assert_equal Time.parse('Sat, 28 Nov 1998 11:39:37 -0500'), a.metadata[:time].to_time
   end
   
   def test_explicit_iconify_on_new
-    a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/ManagingAgileProjects.pdf', 'application/pdf', :binary), :_aspects => [:icon])
+    a = Attachment.create(:file => fixture_file_upload('attachments/ManagingAgileProjects.pdf', 'application/pdf', :binary), :_aspects => [:icon])
     assert_equal 1, a.aspects.size
     assert i = a.aspects.find_by_aspect('icon')
     assert_match /application_pdf\.png/, i.uri.path
@@ -262,7 +259,7 @@ class ModelTest < ActiveSupport::TestCase
   
   def test_create_aspect_post_facto
     assert_difference 'Attachment.count' do
-      Attachment.create(:attachee => users(:pascale), :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary), :parent_id => attachments(:sss).id, :aspect => '*proof')
+      Attachment.create(:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary), :parent_id => attachments(:sss).id, :aspect => '*proof')
     end
     assert_equal 1, attachments(:sss).aspects.size
     assert a = attachments(:sss).aspects.first
@@ -272,9 +269,19 @@ class ModelTest < ActiveSupport::TestCase
   end
 
   def test_generate_reasonable_storage_uri_even_with_unreasonable_attributes
-    a = Attachment.create(:attachee => users(:chris), :file => fixture_file_upload('attachments/ManagingAgileProjects.pdf', 'example/example', :binary), :_aspects => [])
+    a = Attachment.create(:file => fixture_file_upload('attachments/ManagingAgileProjects.pdf', 'example/example', :binary), :_aspects => [])
     p = Pathname.new(a.uri.path)
     assert_operator 128, :>, p.to_s.size
     assert_no_match /example\/example/, p.to_s  # make sure bogus Mime::Type does not appear literally in path.
+  end
+  
+  def test_before_save_aspect_callback
+    Attachment.attachment_options[:_aspects] = [:thumbnail]
+    assert_difference 'Attachment.count', 2 do
+      a = Attachment.create(:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary))
+      assert a.valid?, a.errors.full_messages.first
+      assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(a.digest).chomp!  # Digest::MD5.digest(File.read('test/fixtures/attachments/SperrySlantStar.bmp'))
+      assert_equal 4534, a.size
+    end    
   end
 end

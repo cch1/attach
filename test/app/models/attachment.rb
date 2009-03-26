@@ -6,8 +6,6 @@ class Attachment < ActiveRecord::Base
 
   attr_protected([:mime_type, :size, :filename, :digest])
 
-  belongs_to :attachee, :polymorphic => true
-
   has_attachment(:size => 0.byte..15.megabytes)
   
   validates_as_attachment
@@ -25,6 +23,10 @@ class Attachment < ActiveRecord::Base
     end
   end
   
+  def before_save_aspect
+#    self.attachee = parent.attachee
+  end
+
   # Return a unique id used to tag this attachment's data.
   def uuid!
     @uuid ||= ::UUID.timestamp_create.to_s 
