@@ -74,7 +74,7 @@ class SourceTest < ActiveSupport::TestCase
     assert_equal 'rails.png', s.filename
     assert_equal "image/png", s.mime_type.to_s
     assert_nil s.digest # This resource is not served with a rich HTTP header
-    assert_equal 16531, s.size
+    assert_equal 13036, s.size
   end
   
   def test_load_source_from_local_asset
