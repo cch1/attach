@@ -5,7 +5,7 @@ class SourceTest < ActiveSupport::TestCase
 
   include ActionView::Helpers::AssetTagHelper
 
-  fixtures :users, :attachments, :attachment_blobs
+  fixtures :attachments, :attachment_blobs
 
   FILE_STORE = File.join(RAILS_ROOT, 'public', 'attachments')
   FIXTURE_FILE_STORE = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments')

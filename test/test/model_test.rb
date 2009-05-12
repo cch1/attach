@@ -4,7 +4,7 @@ class ModelTest < ActiveSupport::TestCase
   include ActionController::TestProcess
 
   # TODO: Avoid rescued fixture require_dependency failure
-  fixtures :users, :attachments, :attachment_blobs
+  fixtures :attachments, :attachment_blobs
 
   FIXTURE_FILE_STORE = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments')
 
