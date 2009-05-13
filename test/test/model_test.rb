@@ -74,6 +74,22 @@ class ModelTest < ActiveSupport::TestCase
     end
   end
 
+  def test_save_existing_attachment_should_not_create_new_aspects
+    Attachment.attachment_options[:_aspects] = [:thumbnail]
+    assert_difference 'Attachment.count', 0 do
+      a = attachments(:one).save
+    end
+  end
+
+  def test_double_save_new_attachment_should_not_create_double_aspects
+    Attachment.attachment_options[:_aspects] = [:thumbnail]
+    assert_difference 'Attachment.count', 2 do
+      a = Attachment.create(:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary))
+      assert a._aspects.empty?
+      a.save
+    end
+  end
+
   def test_create_attachment_via_file_with_explicit_aspects
     assert_difference 'Attachment.count', 2 do
       a = Attachment.create(:file => fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary), :_aspects => [:thumbnail])

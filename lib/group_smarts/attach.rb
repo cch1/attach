@@ -63,7 +63,6 @@ module GroupSmarts # :nodoc:
         unless included_modules.include?(InstanceMethods)
           attr_accessor :resize, :iconify
           attr_accessor :store  # indicates whether or not to store attachment data.  Set to false to not store data and instead use a remote reference
-          attr_writer :_aspects # Array or Hash of aspects to create.  Set to an empty array to not create any aspects.
           attr_writer :processing # Queue of transformations to apply to the attachment.
 
           attachment_options[:store] ||= Proc.new {|id, aspect, extension| "db://localhost/attachment_blobs/#{id}"}
@@ -77,6 +76,7 @@ module GroupSmarts # :nodoc:
           delegate :blob, :to => :source
 
           before_validation :process!
+          before_validation :schedule_default_aspects, :unless => :aspect
           before_save :save_source
           before_save :evaluate_custom_callbacks
           after_save :create_aspects
@@ -217,13 +217,26 @@ module GroupSmarts # :nodoc:
         self.source = source.process(:identity)
         yield source.image
       end
+      
+      # Define the set of aspects to be created for this attachment.  Aspects can be defined in several ways:
+      #   * a hash, with the aspect name as the key and a hash of attributes as the value
+      #   * an array of symbols, each of which represents a standard transformation process
+      # Note that an empty array will ensure no aspects are created.
+      def _aspects=(instructions)
+        raise "Can't make aspects of aspects" if parent
+        @_aspects = instructions
+      end
 
       # Returns the hash of aspects to be built for this attachment.
       def _aspects
-        return [] if parent
-        (@_aspects ||= attachment_options[:_aspects]).inject({}) { |m,(k,v)| m[k] = v || {:processing => k, :source => source}; m } || []
+        @_aspects ||= {}
       end
       
+      # Schedule the creation of the default aspects
+      def schedule_default_aspects
+        @_aspects ||= attachment_options[:_aspects] if @source_updated
+      end
+
       # Return an instance of ::URI that points to the attachment's data source.
       def uri
         @uri ||= URI.parse(read_attribute(:uri)) if read_attribute(:uri)
@@ -283,11 +296,13 @@ module GroupSmarts # :nodoc:
         @processing ||= image? && (resize ? :max : :info)
       end
     
-      # Create additional child attachments for each requested aspect.
+      # Create additional child attachments for each requested aspect.  Processing rules are
+      # converted to attributes as required and the queue is cleared when complete.
       def create_aspects
-        _aspects.each do |name, attrs|
+        _aspects.inject({}) { |m,(k,v)| m[k] = v || {:processing => k, :source => source}; m }.each do |name, attrs|
           aspects.make(name, attrs)
         end
+        _aspects.clear
       end
 
       # Store the attachment to the backend, if required, and trigger associated callbacks.
