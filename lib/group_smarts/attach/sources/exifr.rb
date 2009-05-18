@@ -8,7 +8,7 @@ module GroupSmarts # :nodoc:
           super
           @source = source
         end
-        
+
         # Process this source with the given transformation.  This source can only augment the metadata so we return ourself here.
         def process(transform)
           self
@@ -18,15 +18,15 @@ module GroupSmarts # :nodoc:
         def mime_type
           @source.mime_type
         end
-        
+
         def filename
           @source.filename
         end
-        
+
         def uri
           @source.uri
         end
-        
+
         def metadata
           returning super do |h|
             h.reverse_merge!(image.exif.to_hash) if image.exif?
@@ -35,17 +35,17 @@ module GroupSmarts # :nodoc:
             h[:time] = h.delete(:date_time_original) || h.delete(:date_time)
           end
         end
-        
+
         # =Data=
         # Return the source's data.
         def blob
           @source.blob
         end
 
-        private        
+        private
         def image
           @image ||= case mime_type.to_sym
-            when :jpg, :tif then ::EXIFR::JPEG.new(@source.io)
+            when :jpg, :tif then ::EXIFR::JPEG.new(@source.tempfile.path)
             else raise "Can't process source with MIME type #{mime_type}."
           end
         end
