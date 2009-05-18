@@ -10,9 +10,8 @@ module GroupSmarts # :nodoc:
         end
         
         # =Data=
-        # Trivial short-circuit that returns the rewind tempfile itself.
+        # Trivial short-circuit that returns the tempfile itself.
         def tempfile
-          @data.rewind
           @data
         end
       end

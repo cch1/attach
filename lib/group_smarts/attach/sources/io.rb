@@ -8,7 +8,6 @@ module GroupSmarts # :nodoc:
         # =Data=
         # Returns the rewound IO instance that we are proxying.
         def io
-          @data.rewind
           @data
         end
         

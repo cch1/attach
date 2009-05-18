@@ -42,6 +42,7 @@ module GroupSmarts # :nodoc:
 
         # =Data=
         def blob
+          io.rewind
           io.read
         end
 
@@ -74,7 +75,6 @@ module GroupSmarts # :nodoc:
         end
 
         def file
-          @data.rewind
           @data
         end
       end

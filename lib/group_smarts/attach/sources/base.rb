@@ -152,7 +152,7 @@ module GroupSmarts # :nodoc:
         
         # Return a closed Tempfile of source's data.
         def tempfile
-          returning ::Tempfile.new(filename, GroupSmarts::Attach.tempfile_path) do |tmp|
+          returning(::Tempfile.new(filename, GroupSmarts::Attach.tempfile_path)) do |tmp|
             tmp.binmode
             tmp.write(blob)
             tmp.close
