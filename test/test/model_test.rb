@@ -284,10 +284,10 @@ class ModelTest < ActiveSupport::TestCase
     assert_equal 4534, a.size
   end
 
-  def test_generate_reasonable_storage_uri_even_with_unreasonable_attributes
+  def test_generate_storage_uri_with_proc_option
+    Attachment.attachment_options[:store] = Proc.new {|i, a, e| "file://localhost#{::File.join(RAILS_ROOT, 'public', 'attachments', [i,a].compact.join('_'))}"}
     a = Attachment.create(:file => fixture_file_upload('attachments/ManagingAgileProjects.pdf', 'example/example', :binary), :_aspects => [])
     p = Pathname.new(a.uri.path)
-    assert_operator 128, :>, p.to_s.size
     assert_no_match /example\/example/, p.to_s  # make sure bogus Mime::Type does not appear literally in path.
   end
   

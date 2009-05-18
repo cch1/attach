@@ -65,8 +65,6 @@ module GroupSmarts # :nodoc:
           attr_accessor :store  # indicates whether or not to store attachment data.  Set to false to not store data and instead use a remote reference
           attr_writer :processing # Queue of transformations to apply to the attachment.
 
-          attachment_options[:store] ||= Proc.new {|id, aspect, extension| "db://localhost/attachment_blobs/#{id}"}
-
           with_options :foreign_key => 'parent_id' do |m|
             m.has_many   :aspects, :class_name => base_class.to_s, :dependent => :destroy, :extend => AspectsAssociation
             m.belongs_to :parent, :class_name => base_class.to_s
