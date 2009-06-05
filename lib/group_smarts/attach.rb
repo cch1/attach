@@ -156,37 +156,34 @@ module GroupSmarts # :nodoc:
       # Getter for file virtual attribute for consistency with setter.  Useful in case this field is used in a form.
       def file() nil; end
 
-      # This method handles the uploaded file object.  If you set the field name to file, you don't need
-      # any special code in your controller.
-      #
-      #   <% form_for :attachment, :html => { :multipart => true } do |f| -%>
-      #     <p><%= f.file_field :file %></p>
-      #     <p><%= submit_tag :Save %>
-      #   <% end -%>
-      #
-      #   @attachment = Attachment.create! params[:attachment]
-      #
-      # TODO: Allow it to work with Merb tempfiles too.
+      # Setter for the (uploaded) file. 
       def file=(upload)
         return unless upload
         self.store = true if store.nil?
         destroy_source  # Discard any existing source
         aspects.clear
-        self.source = Sources::Base.load(upload, cgi_metadata(upload))
+        begin
+          self.source = Sources::Base.load(upload, cgi_metadata(upload))
+        rescue  # Can't do much here -we have to wait until the validation phase to resurrect/reconstitute errors
+        end 
       end
       
       # Getter for url virtual attribute for consistency with setter.  Useful in case this field is used in a form.
       def url
-        local? ? nil : uri.to_s
+        @url ||= local? ? nil : uri.to_s
       end
 
       # Setter for virtual url attribute used to reference external data sources.
       def url=(u)
+        @url = u
         return unless u
         self.store = false if store.nil?
         destroy_source  # Discard any existing source
         aspects.clear
-        self.source = Sources::Base.load(::URI.parse(u))
+        begin
+          self.source = Sources::Base.load(::URI.parse(u))
+        rescue  # Can't do much here -we have to wait until the validation phase to resurrect/reconstitute errors
+        end 
       end
       
       # Get the source.
@@ -267,9 +264,9 @@ module GroupSmarts # :nodoc:
       
       # Ensure source is valid, and if not, update the ActiveRecord errors object with the source error.
       def valid_source?
-        source && returning(source.valid?) do |valid|
-          errors.add_to_base(source.error) unless valid
-        end          
+        message = source.nil? ? "Source not available" : source.error
+        field = @url.nil? ? :file : :url
+        errors.add(field, message) if message
       end
 
       # Process the source and load the resulting metadata.  No processing of the primary attachment should impede the creation of aspects.

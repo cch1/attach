@@ -161,8 +161,23 @@ class ModelTest < ActiveSupport::TestCase
   end
 
   def test_create_attachment_with_malformed_url
-    assert_raises URI::InvalidURIError do
-      a = Attachment.create(:url => "http://")
+    assert_nothing_raised do
+      u = "http://"
+      a = Attachment.create(:url => u)
+      assert !a.valid?
+      assert_equal u, a.url
+      assert a.errors[:url]
+    end
+  end
+
+  # The #url virtual attribute should behave like a normal attribute.
+  def test_create_attachment_with_invalid_url
+    assert_nothing_raised do
+      u = "http://ffew.aa.xyz/dd.nfg"
+      a = Attachment.create(:url => u)
+      assert !a.valid?
+      assert_equal u, a.url
+      assert a.errors[:url]
     end
   end
 
