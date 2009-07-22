@@ -63,3 +63,13 @@ remote:
   metadata: ~
   description: ~
   parent: ~
+missing:
+  uri: <%= Attachment.storage_uri('xrails', nil, :png) %>
+  content_type: image/png
+  digest: <%= digest('rails.png') %>
+  size: <%= size('rails.png') %>
+  aspect: ~
+  filename: MyString
+  metadata: "<%= {:time => DateTime.parse('Mon, 16 Nov 1998 11:39:37 +0000')}.to_yaml %>"
+  description: ~
+  parent: ~

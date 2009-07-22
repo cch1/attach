@@ -186,9 +186,14 @@ module GroupSmarts # :nodoc:
         end 
       end
       
-      # Get the source.
+      # Get the source.  Rescue exceptions and make them errors on the source virtual attribute.
       def source
-        @source ||= uri && Sources::Base.reload(uri, stored_metadata)
+        begin
+          @source ||= uri && Sources::Base.reload(uri, stored_metadata)
+        rescue => e
+          self.errors.add(:source, e)
+          return nil
+        end
       end
       
       # Set the source.

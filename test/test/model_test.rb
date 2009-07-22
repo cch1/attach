@@ -181,6 +181,14 @@ class ModelTest < ActiveSupport::TestCase
     end
   end
 
+  def test_validation_with_missing_source_store
+    assert_nothing_raised do
+      a = attachments(:missing)
+      assert !a.valid?
+      assert a.errors[:source]
+    end
+  end
+
   # Should only create one attachment as the URL could not be retrieved and thus the default aspects are not built.
   def test_create_attachment_with_preloaded_data
     assert_difference 'Attachment.count', 1 do
