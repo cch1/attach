@@ -4,7 +4,7 @@ class ModelTest < ActiveSupport::TestCase
   include ActionController::TestProcess
 
   # TODO: Avoid rescued fixture require_dependency failure
-  fixtures :attachments, :attachment_blobs
+  fixtures :attachments, :attachment_blobs, :users
 
   FIXTURE_FILE_STORE = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments')
 
@@ -213,15 +213,6 @@ class ModelTest < ActiveSupport::TestCase
     end
   end
   
-  def test_single_source_required
-    assert_no_difference 'Attachment.count' do
-      assert_raise RuntimeError do
-        a = Attachment.new({:url => 'http://www.memoryminer.com/', :file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)})
-        a.save
-      end
-    end
-  end
-  
   def test_delete_simple
     assert_difference 'Attachment.count', -1 do
       assert_difference 'GroupSmarts::Attach::AttachmentBlob.count', -1 do #DbFile.count
@@ -320,5 +311,15 @@ class ModelTest < ActiveSupport::TestCase
     assert_equal "Default Attachment Description", a.description
     assert t = a.aspects.find_by_aspect('thumbnail')
     assert_equal "Default Aspect Description", t.description
+  end
+  
+  # This test fails if parameters for the creation of the primary attachment bleed into the creation of aspects.
+  def test_associated_attachments_with_associated_aspects
+    u = users(:chris)
+    a = u.attachments.create(:file => fixture_file_upload('attachments/ManagingAgileProjects.pdf', 'application/pdf', :binary), :_aspects => [:icon])
+    assert_equal 1, a.aspects.size
+    assert i = a.aspects.find_by_aspect('icon')
+    assert_match /application_pdf\.png/, i.uri.path
+    assert_nil i.uri.scheme
   end
 end

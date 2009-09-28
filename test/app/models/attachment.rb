@@ -10,12 +10,6 @@ class Attachment < ActiveRecord::Base
   
   validates_as_attachment
 
-  def initialize(attrs = {})
-    attrs = attrs || {} # Why is this necessary?  Try Attachment.new and see.
-    raise "Ambiguous attachment type." if (attrs[:url] && attrs[:file])
-    super
-  end
-
   def to_s
     returning "" do |s|
       s << (self[:description] || self[:filename] || self[:uri] || 'Attachment')

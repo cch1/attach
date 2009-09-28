@@ -341,7 +341,9 @@ module GroupSmarts # :nodoc:
       def make(name, attrs)
         raise(AspectError.new("Can't create an aspect of an aspect")) unless proxy_owner.parent_id.nil?
         logger.debug "Attach: MAKE ASPECT   #{proxy_owner}->#{name}\n"
-        create!(attrs.merge({:aspect => name.to_s}))
+        with_exclusive_scope do
+          create!(attrs.merge({:aspect => name.to_s}))
+        end
       end
     end
   end

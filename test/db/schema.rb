@@ -12,8 +12,18 @@ ActiveRecord::Schema.define(:version => 0) do
     t.timestamps
   end
 
-  create_table "attachment_blobs", :force => true do |t|
+  create_table :attachment_blobs, :force => true do |t|
     t.binary "blob", :null => false
     t.integer "attachment_id", :null => false
+  end
+
+  create_table :users, :force => true do |t|
+    t.string :login, :null => false
+  end
+  
+  create_table :named_associations, :force => true do |t|
+    t.references :user
+    t.references :attachment
+    t.string :name
   end
 end
