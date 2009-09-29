@@ -106,6 +106,20 @@ class SourceTest < ActiveSupport::TestCase
     assert_equal 4534, File.size(path)
   end
 
+  def test_store_source_to_file_with_relative_path
+    begin
+      tf = fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)
+      s = GroupSmarts::Attach::Sources::Base.load(tf)
+      path = File.join(File.join('public', 'attachments'), 'uuid_aspect.extension')
+      uri = ::URI.parse(path)
+      s = GroupSmarts::Attach::Sources::Base.store(s, uri)
+      assert File.readable?(path)
+      assert_equal 4534, File.size(path)
+    ensure
+      FileUtils.rm path
+    end
+  end
+
   def test_store_source_to_db
     tf = fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)
     s = GroupSmarts::Attach::Sources::Base.load(tf)
@@ -133,6 +147,13 @@ class SourceTest < ActiveSupport::TestCase
   def test_reload_source_from_file_uri
     path = File.join(FILE_STORE, 'rails.png')
     uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
+    s = GroupSmarts::Attach::Sources::Base.reload(uri)
+    assert_equal 1787, s.size
+  end
+
+  def test_reload_source_from_relative_uri
+    path = File.join('..', 'public', 'attachments', 'rails.png')
+    uri = ::URI.parse(path)
     s = GroupSmarts::Attach::Sources::Base.reload(uri)
     assert_equal 1787, s.size
   end

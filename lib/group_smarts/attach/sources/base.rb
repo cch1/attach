@@ -74,7 +74,7 @@ module GroupSmarts # :nodoc:
         def self.store(source, uri)
           case uri.scheme
 #            when 'http', 'https' then Sources::Http.new(uri)   # Need ARes to pull this off...
-            when 'file' then Sources::File.store(source, uri)
+            when 'file', nil then Sources::File.store(source, uri) # nil implies local storage in a relative path
 #            when 's3' then Sources::S3.new(uri)
             when 'db' then Sources::ActiveRecord.store(source, uri)
             else raise "Don't know how to store to #{uri}."
