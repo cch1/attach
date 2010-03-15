@@ -4,7 +4,7 @@ attach
 attach is a plugin by Chris Hapgood.  It evolved from Rick Olson's attachment_fu, but is substantially changed to
 
 	a. Support local and remote attachments.
-	b. Abstract the concept storage into a URI
+	b. Abstract the concept of storage into a URI
 	c. Support higher order abstractions for content_type (::Mime::Type).
 	d. Encapsulate the attachment source into the state pattern (encompassing the null, remote/loaded, processed and stored phases of an attachment.)
 	e. Remove support for s3 and filesystem backends.  These are likely to be easily reinstated, but for now...
@@ -58,7 +58,7 @@ TODO:
 Limitations
 =====================
 a. Declaration of "image" content types is weak and not documented.
-b. URI-based sources are probed using a HEAD request, and then depending of need, entirely fetched with a GET request.  It is not generally 
+b. URI-based sources are probed using a HEAD request, and then depending on need, entirely fetched with a GET request.  It is not generally 
 possible to know in advance if the document body will be required without reading the headers (notably, to get the size and content type).  
 Technically, cleanly reading the header on a GET and subsequently not downloading the body is possible, but its execution is beyond the
 scope of this initial implementation.  The expedient solution (a HEAD followed by a GET) is used.  

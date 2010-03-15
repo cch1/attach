@@ -1,5 +1,12 @@
 * 23 April 2008 *
-Initial Release
+	Initial Release
 
 * 9 May 2008 *
-Added better documentation.
+	Added better documentation.
+
+...
+
+* 15 March 2010 *
+	Added relative (local file) path support for storage URI.
+	Fix bug in dirty source tracker.
+	Support configurable permissions on File source/store.
