@@ -102,7 +102,8 @@ class SourceTest < ActiveSupport::TestCase
     path = File.join(FILE_STORE, 'uuid_aspect.extension')
     uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
     s = GroupSmarts::Attach::Sources::Base.store(s, uri)
-    assert File.readable?(path)
+    assert stat = File.stat(path)
+    assert_equal 0644, stat.mode & 0777
     assert_equal 4534, File.size(path)
   end
 
@@ -110,10 +111,11 @@ class SourceTest < ActiveSupport::TestCase
     begin
       tf = fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)
       s = GroupSmarts::Attach::Sources::Base.load(tf)
-      path = File.join(File.join('public', 'attachments'), 'uuid_aspect.extension')
+      path = File.join(File.join('test', 'public', 'attachments'), 'uuid_aspect.extension')
       uri = ::URI.parse(path)
       s = GroupSmarts::Attach::Sources::Base.store(s, uri)
-      assert File.readable?(path)
+      assert stat = File.stat(path)
+      assert_equal 0644, stat.mode & 0777
       assert_equal 4534, File.size(path)
     ensure
       FileUtils.rm path

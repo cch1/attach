@@ -5,12 +5,16 @@ module GroupSmarts # :nodoc:
     module Sources
       # Methods for duplexed File sources/sinks.
       class File < GroupSmarts::Attach::Sources::IO
+        FMASK = 0644
+        DMASK = 0755
         # Create a new File at the given URI and store the given source in it. 
         def self.store(source, uri)
-          FileUtils.mkdir_p(::File.dirname(uri.path))
-          # TODO: raise an exception if the file exists.
+          p = Pathname(uri.path)
+          FileUtils.mkdir_p(p.dirname, :mode => DMASK)
+          raise "Target file already exists! (#{p}) " if p.exist?
           FileUtils.cp(source.tempfile.path, uri.path)
-          self.new(::File.open(uri.path), source.metadata)
+          p.chmod(FMASK) if FMASK
+          self.new(p.open, source.metadata)
         end
 
         # Reload a persisted source
