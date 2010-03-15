@@ -312,8 +312,8 @@ module GroupSmarts # :nodoc:
         self.uri = (!store && source.uri) || self.class.storage_uri(uuid!, aspect, mime_type)
         if @source_updated && uri.host == 'localhost'
           logger.debug "Attach: SAVE SOURCE    #{self} (#{source} @ #{source.uri}) to #{uri}:#{store}\n"
-          @source_updated = nil # Indicate that no further storage is necessary.
           self.source = Sources::Base.store(source, uri)
+          @source_updated = nil # Indicate that no further storage is necessary.
         end
       end
 

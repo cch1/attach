@@ -85,6 +85,7 @@ class ModelTest < ActiveSupport::TestCase
     Attachment.attachment_options[:_aspects] = [:thumbnail]
     assert_difference 'Attachment.count', 2 do
       a = Attachment.create(:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary))
+      assert !a.instance_variable_get(:@source_updated)
       assert a._aspects.empty?
       a.save
     end
