@@ -1,10 +1,10 @@
 require 'fileutils'
 
-module GroupSmarts # :nodoc:
+module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources
       # Methods for duplexed File sources/sinks.
-      class File < GroupSmarts::Attach::Sources::IO
+      class File < Hapgood::Attach::Sources::IO
         FMASK = 0644
         DMASK = 0755
         # Create a new File at the given URI and store the given source in it. 
@@ -52,7 +52,7 @@ module GroupSmarts # :nodoc:
 
         # Returns a closed Tempfile of source's data.
         def tempfile
-          returning ::Tempfile.new(filename, GroupSmarts::Attach.tempfile_path) do |tmp|
+          returning ::Tempfile.new(filename, Hapgood::Attach.tempfile_path) do |tmp|
             tmp.close
             ::FileUtils.cp(fn, tmp.path)
           end

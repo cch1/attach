@@ -1,9 +1,9 @@
 require 'RMagick' unless defined?(RMagick)
-module GroupSmarts # :nodoc:
+module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources
       # Methods for attachments modified by RMagick
-      class Rmagick < GroupSmarts::Attach::Sources::Base
+      class Rmagick < Hapgood::Attach::Sources::Base
         StandardImageGeometry = { :thumbnail => ::Magick::Geometry.from_s("128x128"), 
                                   :vignette => ::Magick::Geometry.from_s('256x256'), 
                                   :proof => ::Magick::Geometry.from_s('512x512'),
@@ -63,7 +63,7 @@ module GroupSmarts # :nodoc:
 
         # Return the source's data as a tempfile.
         def tempfile
-          @tempfile ||= returning(::Tempfile.new(filename, GroupSmarts::Attach.tempfile_path)) do |t|
+          @tempfile ||= returning(::Tempfile.new(filename, Hapgood::Attach.tempfile_path)) do |t|
             t.close
             image.write(t.path)
           end

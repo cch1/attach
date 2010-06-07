@@ -1,4 +1,4 @@
-module GroupSmarts # :nodoc:
+module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources
       # Methods for http-based primary sources.  This class suffers from a code smell due to the dilema
@@ -12,7 +12,7 @@ module GroupSmarts # :nodoc:
       #   . It is not practical to open the HTTP connection with a GET, read the header and then clean up nicely (with a close) because
       #     there is no callback when a source is no longer needed.
       # OPTIMIZE: Add a callback to allow the HTTP connection to be nicely closed thus allowing us to open it and read it incrementally.
-      class Http < GroupSmarts::Attach::Sources::Base
+      class Http < Hapgood::Attach::Sources::Base
         attr_reader :uri
         # Download from a URI
         def self.download(uri, method = :head, count = 5)

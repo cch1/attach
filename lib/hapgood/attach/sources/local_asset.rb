@@ -1,7 +1,7 @@
-module GroupSmarts # :nodoc:
+module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources
-      class LocalAsset < GroupSmarts::Attach::Sources::File
+      class LocalAsset < Hapgood::Attach::Sources::File
         # =Metadata=
         def uri
           @data

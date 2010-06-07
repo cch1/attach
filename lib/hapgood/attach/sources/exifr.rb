@@ -1,9 +1,9 @@
 require 'exifr'
-module GroupSmarts # :nodoc:
+module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources
       # Methods for attachments processed (read-only) by EXIFR
-      class EXIFR < GroupSmarts::Attach::Sources::Base
+      class EXIFR < Hapgood::Attach::Sources::Base
         def initialize(source)
           super
           @source = source

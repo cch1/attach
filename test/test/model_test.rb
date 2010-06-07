@@ -32,7 +32,7 @@ class ModelTest < ActiveSupport::TestCase
       assert_equal 'file', a.uri.scheme
     end
   end
-  
+
   def test_create_with_empty_file
     assert_difference 'Attachment.count' do
       a = Attachment.create(:file => fixture_file_upload('attachments/empty.txt', 'text/plain'), :_aspects => [])
@@ -44,9 +44,9 @@ class ModelTest < ActiveSupport::TestCase
       assert a.aspects.empty?
       assert a.uri.absolute?
       assert_equal 'file', a.uri.scheme
-    end    
+    end
   end
-  
+
   # Do attachments holding rehydrated sources behave?
   def test_source_rehydration
     a = attachments(:one)
@@ -121,7 +121,7 @@ class ModelTest < ActiveSupport::TestCase
       assert a.valid?, a.errors.full_messages.first
       assert_not_nil a.filename
       assert_equal "missingphoto.jpg", a.filename
-      assert_kind_of GroupSmarts::Attach::Sources::EXIFR, a.source # Confirm we optimistically fetched the source and extracted info
+      assert_kind_of Hapgood::Attach::Sources::EXIFR, a.source # Confirm we optimistically fetched the source and extracted info
       assert_equal url, a.url
       assert_not_nil a.metadata
       assert_equal "800x600", a.image_size
@@ -138,7 +138,7 @@ class ModelTest < ActiveSupport::TestCase
       a = Attachment.create(:url => 'http://cho.hapgoods.com/icons/powered_by_fedora.png', :_aspects => {:thumbnail => {:url => 'http://cho.hapgoods.com/icons/apache_pb2.gif'}})
       assert a.valid?, a.errors.full_messages.first
       assert_equal 3034, a.size
-      assert_kind_of GroupSmarts::Attach::Sources::Http, a.source # Confirm we didn't fetch the source
+      assert_kind_of Hapgood::Attach::Sources::Http, a.source # Confirm we didn't fetch the source
       assert_not_nil aspect = a.aspects.find_by_aspect('thumbnail')
     end
   end
@@ -150,7 +150,7 @@ class ModelTest < ActiveSupport::TestCase
       assert a.aspects.any?
     end
   end
-  
+
   # Classic problems here include caching sources in a limited high-performance mode during validation only to find that all data is required later.
   # Also state variables (store, _aspects) in the attach instance methods are tricky to keep in sync during assignment.
   def test_validation_independence
@@ -213,15 +213,15 @@ class ModelTest < ActiveSupport::TestCase
       assert a.errors.any?
     end
   end
-  
+
   def test_delete_simple
     assert_difference 'Attachment.count', -1 do
-      assert_difference 'GroupSmarts::Attach::AttachmentBlob.count', -1 do #DbFile.count
+      assert_difference 'Hapgood::Attach::AttachmentBlob.count', -1 do #DbFile.count
         res = attachments(:sss).destroy
       end
     end
   end
-  
+
   def test_delete_with_aspects
     res = attachments(:one)
     assert 1, res.aspects.size
@@ -229,16 +229,16 @@ class ModelTest < ActiveSupport::TestCase
       res.destroy
     end
   end
-  
+
   def test_update_simple
     a = Attachment.find(attachments(:two).id)
     a.description = "Updated Description"
-    assert_nothing_raised do 
+    assert_nothing_raised do
       a.save!
     end
     assert_equal "Updated Description", Attachment.find(attachments(:two).id).description
   end
-  
+
   def test_create_simple
     assert_no_difference 'Attachment.count' do
       assert_nothing_raised do
@@ -246,7 +246,7 @@ class ModelTest < ActiveSupport::TestCase
       end
     end
   end
-  
+
   def test_info
     assert attachments(:two).metadata[:time]
     assert attachments(:two).metadata[:time].is_a?(Time)
@@ -258,7 +258,7 @@ class ModelTest < ActiveSupport::TestCase
     assert a.metadata[:time].is_a?(Time)
     assert_equal Time.parse('Sat, 28 Nov 1998 11:39:37 -0500'), a.metadata[:time].to_time
   end
-  
+
   def test_explicit_iconify_on_new
     a = Attachment.create(:file => fixture_file_upload('attachments/ManagingAgileProjects.pdf', 'application/pdf', :binary), :_aspects => [:icon])
     assert_equal 1, a.aspects.size
@@ -266,13 +266,13 @@ class ModelTest < ActiveSupport::TestCase
     assert_match /application_pdf\.png/, i.uri.path
     assert_nil i.uri.scheme
   end
-  
+
   def test_update
     url = "http://www.rubyonrails.org/images/rails.png"
     attachments(:sss).update_attributes({:url => url})
     assert_equal url, attachments(:sss).url
   end
-  
+
   def test_update_attachment_updates_aspect
     Attachment.attachment_options[:_aspects] = [:thumbnail]
     url = "http://www.rubyonrails.org/images/rails.png"
@@ -287,7 +287,7 @@ class ModelTest < ActiveSupport::TestCase
     assert_not_equal fn, a.aspects.first.uri.path
     assert !File.exists?(fn)
   end
-  
+
   def test_create_aspect_post_facto
     assert_difference 'Attachment.count' do
       Attachment.create(:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary), :parent_id => attachments(:sss).id, :aspect => '*proof')
@@ -305,7 +305,7 @@ class ModelTest < ActiveSupport::TestCase
     p = Pathname.new(a.uri.path)
     assert_no_match /example\/example/, p.to_s  # make sure bogus Mime::Type does not appear literally in path.
   end
-  
+
   def test_before_save_callback
     a = Attachment.create(:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary), :_aspects => [:thumbnail])
     assert a.valid?, a.errors.full_messages.first
@@ -313,7 +313,7 @@ class ModelTest < ActiveSupport::TestCase
     assert t = a.aspects.find_by_aspect('thumbnail')
     assert_equal "Default Aspect Description", t.description
   end
-  
+
   # This test fails if parameters for the creation of the primary attachment bleed into the creation of aspects.
   def test_associated_attachments_with_associated_aspects
     u = users(:chris)

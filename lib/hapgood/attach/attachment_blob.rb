@@ -1,4 +1,4 @@
-class GroupSmarts::Attach::AttachmentBlob < ActiveRecord::Base
+class Hapgood::Attach::AttachmentBlob < ActiveRecord::Base
   belongs_to :attachment if table_exists?
   
   # Summarize blob data

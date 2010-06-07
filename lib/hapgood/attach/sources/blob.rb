@@ -1,8 +1,8 @@
-module GroupSmarts # :nodoc:
+module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources
       # Methods for blob sources
-      class Blob < GroupSmarts::Attach::Sources::Base
+      class Blob < Hapgood::Attach::Sources::Base
         # =Metadata=
         
         # =Data=

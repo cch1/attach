@@ -1,8 +1,8 @@
-module GroupSmarts # :nodoc:
+module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources
       # Methods for IO-based sources.
-      class IO < GroupSmarts::Attach::Sources::Base
+      class IO < Hapgood::Attach::Sources::Base
         # =Metadata=
         
         # =Data=

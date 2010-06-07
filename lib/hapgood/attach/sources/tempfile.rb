@@ -1,8 +1,8 @@
-module GroupSmarts # :nodoc:
+module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources
       # Methods for Tempfile-based primary sources.
-      class Tempfile < GroupSmarts::Attach::Sources::File
+      class Tempfile < Hapgood::Attach::Sources::File
         # =Metadata=
         # Returns the URI of the source.
         def uri

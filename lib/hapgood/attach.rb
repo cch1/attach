@@ -1,4 +1,4 @@
-module GroupSmarts # :nodoc:
+module Hapgood # :nodoc:
   module Attach # :nodoc:
     @@default_processors = %w(ImageScience Rmagick MiniMagick)
     @@tempfile_path      = File.join(RAILS_ROOT, 'tmp', 'attach')
@@ -15,7 +15,7 @@ module GroupSmarts # :nodoc:
     class MissingSource < StandardError; end
 
     module ActMethods
-      # Options: 
+      # Options:
       # *  <tt>:content_type</tt> - Allowed content types.  Allows all by default.  Use :image to allow all standard image types.
       # *  <tt>:min_size</tt> - Minimum size allowed.  1 byte is the default.
       # *  <tt>:max_size</tt> - Maximum size allowed.  1.megabyte is the default.
@@ -36,7 +36,7 @@ module GroupSmarts # :nodoc:
       #   has_attachment :content_type => ['application/pdf', :image], :resize_to => 'x50'
       #   has_attachment :_aspects => { :thumbnail => [50, 50] }
       #   has_attachment :storage => :file_system, :path_prefix => 'public/files'
-      #   has_attachment :storage => :file_system, :path_prefix => 'public/files', 
+      #   has_attachment :storage => :file_system, :path_prefix => 'public/files',
       #     :content_type => :image, :resize_to => [50,50]
       #   has_attachment :storage => :file_system, :path_prefix => 'public/files',
       #     :_aspects => { :thumbnail => [50, 50], :geometry => 'x50' }
@@ -48,13 +48,13 @@ module GroupSmarts # :nodoc:
         options[:size]             ||= (options[:min_size]..options[:max_size])
         options[:_aspects]         ||= []
         options[:s3_access]        ||= :public_read
-        options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? GroupSmarts::Attach.image_content_types : t }.flatten unless options[:content_type].nil?
+        options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Hapgood::Attach.image_content_types : t }.flatten unless options[:content_type].nil?
         options[:store]            ||= Proc.new {|i, a, e| "file://localhost#{::File.join(RAILS_ROOT, 'public', 'attachments', [[i,a].compact.join('_'), e].join('.'))}"}
-        
+
         unless options[:_aspects].is_a?(Array)
           raise ArgumentError, ":The aspects option should be an array: e.g. :aspects => [:thumbnail, :proof]"
         end
-        
+
         # doing these shenanigans so that #attachment_options is available to processors and backends
         class_inheritable_accessor :attachment_options
         self.attachment_options = options
@@ -69,8 +69,8 @@ module GroupSmarts # :nodoc:
             m.has_many   :aspects, :class_name => base_class.to_s, :dependent => :destroy, :extend => AspectsAssociation
             m.belongs_to :parent, :class_name => base_class.to_s
           end
-          
-          has_one :attachment_blob, :class_name => 'GroupSmarts::Attach::AttachmentBlob', :dependent => :destroy if GroupSmarts::Attach::AttachmentBlob.table_exists?
+
+          has_one :attachment_blob, :class_name => 'Hapgood::Attach::AttachmentBlob', :dependent => :destroy if Hapgood::Attach::AttachmentBlob.table_exists?
           delegate :blob, :to => :source
 
           before_validation :process!
@@ -96,11 +96,11 @@ module GroupSmarts # :nodoc:
           end
         end
       end
-      
-      delegate :content_types, :to => GroupSmarts::Attach
-      delegate :image_content_types, :to => GroupSmarts::Attach
-      delegate :icon_content_types, :to => GroupSmarts::Attach
-      delegate :program_content_types, :to => GroupSmarts::Attach
+
+      delegate :content_types, :to => Hapgood::Attach
+      delegate :image_content_types, :to => Hapgood::Attach
+      delegate :icon_content_types, :to => Hapgood::Attach
+      delegate :program_content_types, :to => Hapgood::Attach
 
       # Performs common validations for attachment models.
       def validates_as_attachment
@@ -115,8 +115,8 @@ module GroupSmarts # :nodoc:
       def image?(content_type)
         image_content_types.include?(content_type)
       end
-      
-      # Builds a URI where the attachment should be stored 
+
+      # Builds a URI where the attachment should be stored
       def storage_uri(id, aspect, mt)
         extension = mt.to_sym.to_s.gsub('/', '_') rescue nil
         ::URI.parse(attachment_options[:store].call(id, aspect, extension))
@@ -126,7 +126,7 @@ module GroupSmarts # :nodoc:
     module InstanceMethods
       def self.included( base )
         base.define_callbacks *[:before_save_attachment, :before_save_aspect] if base.respond_to?(:define_callbacks)
-      end  
+      end
 
       # Trigger appropriate custom callbacks.
       def evaluate_custom_callbacks
@@ -136,18 +136,18 @@ module GroupSmarts # :nodoc:
           callback(:before_save_attachment)
         end
       end
-      
+
       # Checks whether the attachment's content type is an image content type
       def image?
         self.class.image?(content_type)
       end
-      
+
       # Returns predicate based on attachment being hosted locally (will be stored locally or already stored locally)
       # OPTIMIZE: Consider having this be a method on source for encapsulation.
       def local?
         uri && %w(file db s3).include?(uri.scheme)
       end
-      
+
       # Returns the width/height in a suitable format for the image_tag helper: (100x100)
       def image_size
         [metadata[:width].to_s, metadata[:height].to_s] * 'x' if metadata && metadata[:width] && metadata[:height]
@@ -156,7 +156,7 @@ module GroupSmarts # :nodoc:
       # Getter for file virtual attribute for consistency with setter.  Useful in case this field is used in a form.
       def file() nil; end
 
-      # Setter for the (uploaded) file. 
+      # Setter for the (uploaded) file.
       def file=(upload)
         return unless upload
         self.store = true if store.nil?
@@ -165,9 +165,9 @@ module GroupSmarts # :nodoc:
         begin
           self.source = Sources::Base.load(upload, cgi_metadata(upload))
         rescue  # Can't do much here -we have to wait until the validation phase to resurrect/reconstitute errors
-        end 
+        end
       end
-      
+
       # Getter for url virtual attribute for consistency with setter.  Useful in case this field is used in a form.
       def url
         @url ||= local? ? nil : uri.to_s
@@ -183,9 +183,9 @@ module GroupSmarts # :nodoc:
         begin
           self.source = Sources::Base.load(::URI.parse(u))
         rescue  # Can't do much here -we have to wait until the validation phase to resurrect/reconstitute errors
-        end 
+        end
       end
-      
+
       # Get the source.  Rescue exceptions and make them errors on the source virtual attribute.
       def source
         begin
@@ -195,7 +195,7 @@ module GroupSmarts # :nodoc:
           return nil
         end
       end
-      
+
       # Set the source.
       def source=(src)
         raise "Source should be an instance of Attach::Sources::Base or its subclasses." unless src.kind_of?(Sources::Base)
@@ -206,7 +206,7 @@ module GroupSmarts # :nodoc:
         @source = src
         @source_updated = true
       end
-      
+
       # Allows you to work with a processed representation (RMagick, ImageScience, etc) of the attachment in a block.
       #
       #   @attachment.with_image do |img|
@@ -217,7 +217,7 @@ module GroupSmarts # :nodoc:
         self.source = source.process(:identity)
         yield source.image
       end
-      
+
       # Define the set of aspects to be created for this attachment.  Aspects can be defined in several ways:
       #   * a hash, with the aspect name as the key and a hash of attributes as the value
       #   * an array of symbols, each of which represents a standard transformation process
@@ -231,7 +231,7 @@ module GroupSmarts # :nodoc:
       def _aspects
         @_aspects ||= {}
       end
-      
+
       # Schedule the creation of the default aspects
       def schedule_default_aspects
         @_aspects ||= attachment_options[:_aspects] if @source_updated
@@ -241,32 +241,32 @@ module GroupSmarts # :nodoc:
       def uri
         @uri ||= URI.parse(read_attribute(:uri)) if read_attribute(:uri)
       end
-      
+
       # Setter for URI.  Accepts a string representation of a URI, or a ::URI instance.
       def uri=(u)
         @uri = u && (u.kind_of?(::URI) ? u : ::URI.parse(u).normalize)
         write_attribute(:uri, @uri && @uri.to_s)
       end
-      
+
       # Getter for MIME type.  Returns an instance of Mime::Type
       def mime_type
         @mime_type ||= Mime::Type.lookup(read_attribute(:content_type))
       end
-      
+
       # Setter for MIME type.  Accepts a ::Mime::Type instance (for a string, use the content_type= setter and reset @mime_type)
       def mime_type=(mt)
         # TODO: Convert this to a composed_of macro, but only when :constructor is available in all supported Rails versions.
         @mime_type = mt
         write_attribute(:content_type, @mime_type && @mime_type.to_s)
       end
-      
+
       protected
       # validates the content_type attribute according to the current model's options
       def valid_content_type?
         whitelist = attachment_options[:content_type]
         errors.add :content_type, ActiveRecord::Errors.default_error_messages[:inclusion] unless whitelist.nil? || whitelist.include?(self.content_type)
       end
-      
+
       # Ensure source is valid, and if not, update the ActiveRecord errors object with the source error.
       def valid_source?
         message = source.nil? ? "Source not available" : source.error
@@ -282,7 +282,7 @@ module GroupSmarts # :nodoc:
         end
         true
       end
-      
+
       # Returns true if the original attachment or any of its aspects require data for processing (best guess) or storing.
       # Manually defined _aspects (via attribute) are assumed to not require data for processing unless the store attribute is also set.
       def data_required?
@@ -295,7 +295,7 @@ module GroupSmarts # :nodoc:
       def processing
         @processing ||= image? && (resize ? :max : :info)
       end
-    
+
       # Create additional child attachments for each requested aspect.  Processing rules are
       # converted to attributes as required and the queue is cleared when complete.
       def create_aspects
@@ -322,16 +322,16 @@ module GroupSmarts # :nodoc:
       rescue MissingSource
         true # If the source is missing, carry on.
       end
-      
+
       private
       def cgi_metadata(data)
         returning(Hash.new) do |md|
-          md[:filename] = data.original_filename if data.respond_to?(:original_filename) 
-          md[:mime_type] = ::Mime::Type.lookup(data.content_type) if data.respond_to?(:content_type) 
+          md[:filename] = data.original_filename if data.respond_to?(:original_filename)
+          md[:mime_type] = ::Mime::Type.lookup(data.content_type) if data.respond_to?(:content_type)
         end
       end
-      
-      # Extract stored metadata from attributes to enrichen a purely binary source to the same level as a CGI-supplied source. 
+
+      # Extract stored metadata from attributes to enrichen a purely binary source to the same level as a CGI-supplied source.
       def stored_metadata
         %w(filename mime_type).inject(Hash.new) {|hash, key| hash[key.to_sym] = self.send(key.to_sym);hash}
       end

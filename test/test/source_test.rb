@@ -21,8 +21,8 @@ class SourceTest < ActiveSupport::TestCase
 
   def test_load_source_from_tempfile
     tf = fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)
-    s = GroupSmarts::Attach::Sources::Base.load(tf)
-    assert_instance_of GroupSmarts::Attach::Sources::Tempfile, s
+    s = Hapgood::Attach::Sources::Base.load(tf)
+    assert_instance_of Hapgood::Attach::Sources::Tempfile, s
     assert s.valid?
     # Check data
     assert_kind_of ::ActionController::TestUploadedFile, s.tempfile
@@ -40,8 +40,8 @@ class SourceTest < ActiveSupport::TestCase
 
   def test_load_source_from_file
     f = ::File.open(File.join(FILE_STORE, 'SperrySlantStar.bmp'), "r+b")
-    s = GroupSmarts::Attach::Sources::Base.load(f)
-    assert_instance_of GroupSmarts::Attach::Sources::File, s
+    s = Hapgood::Attach::Sources::Base.load(f)
+    assert_instance_of Hapgood::Attach::Sources::File, s
     assert s.valid?
     # Check data
     assert_kind_of ::Tempfile, s.tempfile
@@ -60,8 +60,8 @@ class SourceTest < ActiveSupport::TestCase
 
   def test_load_source_from_http
     uri = URI.parse("http://www.rubyonrails.org/images/rails.png")
-    s = GroupSmarts::Attach::Sources::Base.load(uri)
-    assert_instance_of GroupSmarts::Attach::Sources::Http, s
+    s = Hapgood::Attach::Sources::Base.load(uri)
+    assert_instance_of Hapgood::Attach::Sources::Http, s
     assert s.valid?
     # Check data
     assert_kind_of ::Tempfile, s.tempfile
@@ -79,8 +79,8 @@ class SourceTest < ActiveSupport::TestCase
   
   def test_load_source_from_local_asset
     uri = URI.parse(image_path('logo.gif'))
-    s = GroupSmarts::Attach::Sources::Base.load(uri)
-    assert_instance_of GroupSmarts::Attach::Sources::LocalAsset, s
+    s = Hapgood::Attach::Sources::Base.load(uri)
+    assert_instance_of Hapgood::Attach::Sources::LocalAsset, s
     assert s.valid?
     # Check data
     assert_kind_of ::Tempfile, s.tempfile
@@ -98,10 +98,10 @@ class SourceTest < ActiveSupport::TestCase
 
   def test_store_source_to_file
     tf = fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)
-    s = GroupSmarts::Attach::Sources::Base.load(tf)
+    s = Hapgood::Attach::Sources::Base.load(tf)
     path = File.join(FILE_STORE, 'uuid_aspect.extension')
     uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
-    s = GroupSmarts::Attach::Sources::Base.store(s, uri)
+    s = Hapgood::Attach::Sources::Base.store(s, uri)
     assert stat = File.stat(path)
     assert_equal 0644, stat.mode & 0777
     assert_equal 4534, File.size(path)
@@ -110,10 +110,10 @@ class SourceTest < ActiveSupport::TestCase
   def test_store_source_to_file_with_relative_path
     begin
       tf = fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)
-      s = GroupSmarts::Attach::Sources::Base.load(tf)
+      s = Hapgood::Attach::Sources::Base.load(tf)
       path = File.join(File.join('test', 'public', 'attachments'), 'uuid_aspect.extension')
       uri = ::URI.parse(path)
-      s = GroupSmarts::Attach::Sources::Base.store(s, uri)
+      s = Hapgood::Attach::Sources::Base.store(s, uri)
       assert stat = File.stat(path)
       assert_equal 0644, stat.mode & 0777
       assert_equal 4534, File.size(path)
@@ -124,17 +124,17 @@ class SourceTest < ActiveSupport::TestCase
 
   def test_store_source_to_db
     tf = fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)
-    s = GroupSmarts::Attach::Sources::Base.load(tf)
+    s = Hapgood::Attach::Sources::Base.load(tf)
     uri = ::URI.parse("db://localhost").merge(::URI.parse('12345'))
-    s = GroupSmarts::Attach::Sources::Base.store(s, uri)
-    assert dbf = GroupSmarts::Attach::AttachmentBlob.find(:first, :conditions => {:attachment_id => 12345})
+    s = Hapgood::Attach::Sources::Base.store(s, uri)
+    assert dbf = Hapgood::Attach::AttachmentBlob.find(:first, :conditions => {:attachment_id => 12345})
     assert_equal 4534, dbf.blob.size
   end
 
   def test_reload_source_from_db_uri
     id = Fixtures.identify('one')
     uri = ::URI.parse("db://localhost").merge(::URI.parse(id.to_s))
-    s = GroupSmarts::Attach::Sources::Base.reload(uri)
+    s = Hapgood::Attach::Sources::Base.reload(uri)
     assert_equal 1787, s.size
   end
 
@@ -142,36 +142,36 @@ class SourceTest < ActiveSupport::TestCase
     id = Fixtures.identify('xone')
     uri = ::URI.parse("db://localhost").merge(::URI.parse(id.to_s))
     assert_raises RuntimeError do
-      s = GroupSmarts::Attach::Sources::Base.reload(uri)
+      s = Hapgood::Attach::Sources::Base.reload(uri)
     end
   end
 
   def test_reload_source_from_file_uri
     path = File.join(FILE_STORE, 'rails.png')
     uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
-    s = GroupSmarts::Attach::Sources::Base.reload(uri)
+    s = Hapgood::Attach::Sources::Base.reload(uri)
     assert_equal 1787, s.size
   end
 
   def test_reload_source_from_relative_uri
     path = File.join('..', 'public', 'attachments', 'rails.png')
     uri = ::URI.parse(path)
-    s = GroupSmarts::Attach::Sources::Base.reload(uri)
+    s = Hapgood::Attach::Sources::Base.reload(uri)
     assert_equal 1787, s.size
   end
 
   def test_reload_source_from_invalid_file_uri
     path = File.join(FILE_STORE, 'xrails.png')
     uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
-    assert_raises GroupSmarts::Attach::MissingSource do
-      s = GroupSmarts::Attach::Sources::Base.reload(uri)
+    assert_raises Hapgood::Attach::MissingSource do
+      s = Hapgood::Attach::Sources::Base.reload(uri)
     end
   end
 
   def test_reload_source_from_local_asset_uri
     uri = URI.parse(image_path('logo.gif'))
-    s = GroupSmarts::Attach::Sources::Base.reload(uri)
-    assert_kind_of GroupSmarts::Attach::Sources::LocalAsset, s
+    s = Hapgood::Attach::Sources::Base.reload(uri)
+    assert_kind_of Hapgood::Attach::Sources::LocalAsset, s
     assert_equal 14762, s.size
     assert_equal uri, s.uri
   end
@@ -179,15 +179,15 @@ class SourceTest < ActiveSupport::TestCase
   def test_destroy_db_backed_source
     id = Fixtures.identify('one')
     uri = ::URI.parse("db://localhost").merge(::URI.parse(id.to_s))
-    s = GroupSmarts::Attach::Sources::Base.reload(uri)
+    s = Hapgood::Attach::Sources::Base.reload(uri)
     s.destroy
-    assert_nil GroupSmarts::Attach::AttachmentBlob.find(:first, :conditions => {:attachment_id => 12345})
+    assert_nil Hapgood::Attach::AttachmentBlob.find(:first, :conditions => {:attachment_id => 12345})
   end
 
   def test_destroy_file_backed_source
     path = File.join(FILE_STORE, 'rails.png')
     uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
-    s = GroupSmarts::Attach::Sources::Base.reload(uri)
+    s = Hapgood::Attach::Sources::Base.reload(uri)
     s.destroy
     assert !File.readable?(path)
   end
@@ -195,14 +195,14 @@ class SourceTest < ActiveSupport::TestCase
   def test_destroy_local_asset_source
     path = File.join(FILE_STORE, 'rails.png')
     uri = URI.parse(path)
-    s = GroupSmarts::Attach::Sources::Base.reload(uri)
+    s = Hapgood::Attach::Sources::Base.reload(uri)
     s.destroy
     assert File.readable?(path)
   end
   
   def test_process_thumbnail_with_rmagick
-    s = GroupSmarts::Attach::Sources::Base.load(fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary))
-    assert s = GroupSmarts::Attach::Sources::Base.process(s, :thumbnail)
+    s = Hapgood::Attach::Sources::Base.load(fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary))
+    assert s = Hapgood::Attach::Sources::Base.process(s, :thumbnail)
     assert_equal 128, s.metadata[:width]
     assert_equal 102, s.metadata[:height]
     assert_operator 4616..4636, :include?, s.size
@@ -210,16 +210,16 @@ class SourceTest < ActiveSupport::TestCase
   end
 
   def test_process_info_with_exifr
-    s = GroupSmarts::Attach::Sources::Base.load(fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary))
-    assert s = GroupSmarts::Attach::Sources::Base.process(s, :info)
+    s = Hapgood::Attach::Sources::Base.load(fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary))
+    assert s = Hapgood::Attach::Sources::Base.process(s, :info)
     assert s.metadata[:time].is_a?(Time)
     assert_equal Time.parse('Sat, 28 Nov 1998 11:39:37 -0500'), s.metadata[:time].to_time
   end
   
   def test_process_with_icon
-    s = GroupSmarts::Attach::Sources::Base.load(fixture_file_upload('attachments/empty.txt', 'text/plain', :binary))
-    assert s = GroupSmarts::Attach::Sources::Base.process(s, :icon)
-    assert_kind_of GroupSmarts::Attach::Sources::LocalAsset, s
+    s = Hapgood::Attach::Sources::Base.load(fixture_file_upload('attachments/empty.txt', 'text/plain', :binary))
+    assert s = Hapgood::Attach::Sources::Base.process(s, :icon)
+    assert_kind_of Hapgood::Attach::Sources::LocalAsset, s
     assert_equal 'image/png', s.mime_type.to_s
     assert_match /(\/.*)+\/mime_type_icons.text_plain\.png/, s.uri.path
   end

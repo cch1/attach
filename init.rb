@@ -9,6 +9,6 @@ Tempfile.class_eval do
 end
 
 require 'geometry'
-ActiveRecord::Base.send(:extend, GroupSmarts::Attach::ActMethods)
-GroupSmarts::Attach.tempfile_path = ATTACH_TEMPFILE_PATH if Object.const_defined?(:ATTACH_TEMPFILE_PATH)
-FileUtils.mkdir_p GroupSmarts::Attach.tempfile_path
+ActiveRecord::Base.send(:extend, Hapgood::Attach::ActMethods)
+Hapgood::Attach.tempfile_path = ATTACH_TEMPFILE_PATH if Object.const_defined?(:ATTACH_TEMPFILE_PATH)
+FileUtils.mkdir_p Hapgood::Attach.tempfile_path

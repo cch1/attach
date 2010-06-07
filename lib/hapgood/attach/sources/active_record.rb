@@ -1,8 +1,8 @@
-module GroupSmarts # :nodoc:
+module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources
       # Methods for duplexed, persistent sources/sinks
-      class ActiveRecord < GroupSmarts::Attach::Sources::Base
+      class ActiveRecord < Hapgood::Attach::Sources::Base
         attr_reader :uri
 
         # Create a new record identified by the given URI and store the given source in it. 
