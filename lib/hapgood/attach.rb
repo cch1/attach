@@ -191,7 +191,7 @@ module Hapgood # :nodoc:
         begin
           @source ||= uri && Sources::Base.reload(uri, stored_metadata)
         rescue => e
-          self.errors.add(:source, e)
+          self.errors.add(:source, e.to_s)
           return nil
         end
       end
