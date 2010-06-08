@@ -7,7 +7,7 @@ end
 %>
 
 one:
-  id: Fixtures.identify(:one)
+  id: <%= Fixtures.identify(:one) %>
   blob: <%= fixture_data('rails.png') %>
   attachment_id: <%= Fixtures.identify(:one) %>
 one_thumb:
