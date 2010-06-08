@@ -10,7 +10,7 @@ load(RAILS_ROOT + "/db/schema.rb")
 # ActiveRecord::Migrator.migrate("#{Rails.root}/db/migrate")
 
 # Set Test::Unit options for optimal performance/fidelity.
-class Test::Unit::TestCase
+class ActiveSupport::TestCase
   def self.uses_mocha(description)
     require 'mocha'
     yield
