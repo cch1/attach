@@ -76,7 +76,7 @@ class SourceTest < ActiveSupport::TestCase
     assert_nil s.digest # This resource is not served with a rich HTTP header
     assert_equal 13036, s.size
   end
-  
+
   def test_load_source_from_local_asset
     uri = URI.parse(image_path('logo.gif'))
     s = Hapgood::Attach::Sources::Base.load(uri)
@@ -191,7 +191,7 @@ class SourceTest < ActiveSupport::TestCase
     s.destroy
     assert !File.readable?(path)
   end
-  
+
   def test_destroy_local_asset_source
     path = File.join(FILE_STORE, 'rails.png')
     uri = URI.parse(path)
@@ -199,7 +199,7 @@ class SourceTest < ActiveSupport::TestCase
     s.destroy
     assert File.readable?(path)
   end
-  
+
   def test_process_thumbnail_with_rmagick
     s = Hapgood::Attach::Sources::Base.load(fixture_file_upload('attachments/AlexOnBMW#4.jpg', 'image/jpeg', :binary))
     assert s = Hapgood::Attach::Sources::Base.process(s, :thumbnail)
@@ -215,7 +215,7 @@ class SourceTest < ActiveSupport::TestCase
     assert s.metadata[:time].is_a?(Time)
     assert_equal Time.parse('Sat, 28 Nov 1998 11:39:37 -0500'), s.metadata[:time].to_time
   end
-  
+
   def test_process_with_icon
     s = Hapgood::Attach::Sources::Base.load(fixture_file_upload('attachments/empty.txt', 'text/plain', :binary))
     assert s = Hapgood::Attach::Sources::Base.process(s, :icon)

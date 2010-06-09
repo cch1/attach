@@ -2,7 +2,7 @@
 def fixture_data(name)
   fn = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments', name)
   data = File.open(fn,'rb').read
-  "!binary | \n    #{[data].pack('m').gsub(/\n/,"\n    ")}"
+  "!binary |\n    #{[data].pack('m').split("\n").join("\n    ")}\n"
 end
 %>
 

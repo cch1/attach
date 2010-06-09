@@ -3,7 +3,6 @@ require File.dirname(__FILE__) + '/test_helper.rb'
 class ModelTest < ActiveSupport::TestCase
   include ActionController::TestProcess
 
-  # TODO: Avoid rescued fixture require_dependency failure
   fixtures :attachments, :attachment_blobs, :users
 
   FIXTURE_FILE_STORE = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments')

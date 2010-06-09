@@ -17,6 +17,7 @@ class ActiveSupport::TestCase
   rescue LoadError
     $stderr.puts "Skipping #{description} tests. `gem install mocha` and try again."
   end
+  set_fixture_class :attachment_blobs => Hapgood::Attach::AttachmentBlob
 end
 
 ::Attachment::FIXTURE_FILE_STORE = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments')

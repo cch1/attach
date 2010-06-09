@@ -1,4 +1,4 @@
-ActiveRecord::Schema.define(:version => 0) do
+ActiveRecord::Schema.define(:version => Time.now.utc.strftime("%Y%m%d%H%M%S")) do
   create_table :attachments, :force => true do |t|
     t.string :uri, :limit => 255
     t.string :content_type, :limit => 35
@@ -20,7 +20,7 @@ ActiveRecord::Schema.define(:version => 0) do
   create_table :users, :force => true do |t|
     t.string :login, :null => false
   end
-  
+
   create_table :named_associations, :force => true do |t|
     t.references :user
     t.references :attachment
