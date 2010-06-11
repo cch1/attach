@@ -5,11 +5,9 @@ class ModelTest < ActiveSupport::TestCase
 
   fixtures :attachments, :attachment_blobs, :users
 
-  FIXTURE_FILE_STORE = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments')
-
   def setup
     FileUtils.mkdir Attachment::FILE_STORE
-    FileUtils.cp_r File.join(FIXTURE_FILE_STORE, '.'), Attachment::FILE_STORE
+    FileUtils.cp_r File.join(Fixtures::FILE_STORE, '.'), Attachment::FILE_STORE
     @ao = Attachment.attachment_options.dup
   end
 

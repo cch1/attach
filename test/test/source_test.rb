@@ -8,11 +8,10 @@ class SourceTest < ActiveSupport::TestCase
   fixtures :attachments, :attachment_blobs
 
   FILE_STORE = File.join(RAILS_ROOT, 'public', 'attachments')
-  FIXTURE_FILE_STORE = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments')
 
   def setup
     FileUtils.mkdir FILE_STORE
-    FileUtils.cp_r File.join(FIXTURE_FILE_STORE, '.'), FILE_STORE
+    FileUtils.cp_r File.join(Fixtures::FILE_STORE, '.'), FILE_STORE
   end
 
   def teardown

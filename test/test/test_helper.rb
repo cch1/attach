@@ -19,5 +19,4 @@ class ActiveSupport::TestCase
   end
   set_fixture_class :attachment_blobs => Hapgood::Attach::AttachmentBlob
 end
-
-::Attachment::FIXTURE_FILE_STORE = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments')
+Fixtures::FILE_STORE = File.join(RAILS_ROOT, 'test', 'fixtures', 'attachments')

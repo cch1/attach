@@ -1,14 +1,14 @@
 # Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
 <%
 def digest(name)
-  fn = File.join(Attachment::FIXTURE_FILE_STORE, name)
+  fn = File.join(Fixtures::FILE_STORE, name)
   data = File.open(fn,'rb').read
   digest = Digest::MD5.digest(data)
   "!binary | #{[digest].pack('m')}\n"
 end
 
 def size(name)
-  fn = File.join(Attachment::FIXTURE_FILE_STORE, name)
+  fn = File.join(Fixtures::FILE_STORE, name)
   File.size(fn)
 end
 %>
