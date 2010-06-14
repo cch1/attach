@@ -4,8 +4,8 @@ module Hapgood # :nodoc:
     module Sources
       # Methods for attachments modified by RMagick
       class Rmagick < Hapgood::Attach::Sources::Base
-        StandardImageGeometry = { :thumbnail => ::Magick::Geometry.from_s("128x128"), 
-                                  :vignette => ::Magick::Geometry.from_s('256x256'), 
+        StandardImageGeometry = { :thumbnail => ::Magick::Geometry.from_s("128x128"),
+                                  :vignette => ::Magick::Geometry.from_s('256x256'),
                                   :proof => ::Magick::Geometry.from_s('512x512'),
                                   :max => ::Magick::Geometry.from_s('2097152@')} # 2 Megapixels
         def initialize(source)
@@ -13,48 +13,60 @@ module Hapgood # :nodoc:
           @source = source
           @uri = @source.uri
           @blob = @source.blob
+          @persistent = @source.persistent?
         end
-        
+
         # Process this source with the given transformation, which must be a Geometry object.
         def process(transform)
           t = StandardImageGeometry[transform.to_sym]
-          raise "Don't know how to do the #{transform} transformation" unless t 
+          raise "Don't know how to do the #{transform} transformation" unless t
           image.change_geometry(t) { |cols, rows, image| image.resize!(cols, rows) }
           @aspect = transform.to_s
           @uri = nil # Once transformed, all external sources are invalid.
           @blob = nil # Once transformed, we need to reset the data.  Now the getter can lazily load the blob.
+          @persistent = false
           self
         end
 
-        # =Metadata=
-        # Gets a filename suitable for this attachment.  
-        def filename
-          adjusted_filename_for(@source.filename, @aspect)          
+        # Does this source persist at the URI independent of this application?
+        def persistent?
+          @persistent
         end
-        
+
+        # Can this source be modified by this application?
+        def readonly?
+          false
+        end
+
+        # =Metadata=
+        # Gets a filename suitable for this attachment.
+        def filename
+          adjusted_filename_for(@source.filename, @aspect)
+        end
+
         def uri
           @uri ||= super
         end
-        
-        # Return size of source in bytes.  
+
+        # Return size of source in bytes.
         # NB: The filesize method is stale after resize/thumbnail until to_blob is invoked (or perhaps other methods).
         def size
           data
           image.filesize
         end
-        
+
         # Return content type of source as a string.
         def mime_type
           ::Mime::Type.lookup(image.mime_type)
         end
-        
+
         def metadata
           returning super.merge(exif_data) do |h|
             h[:height] = image.rows
             h[:width] = image.columns
           end
         end
-        
+
         # =Data=
         # Return the source's data as a blob string.
         def blob
@@ -68,7 +80,7 @@ module Hapgood # :nodoc:
             image.write(t.path)
           end
         end
-        
+
         def image
           @image ||= ::Magick::Image.read(@source.tempfile.path).first
         end
@@ -84,7 +96,7 @@ module Hapgood # :nodoc:
           "#{basename}_#{aspect}#{ext}"
         end
 
-        # Extract useful information from (ExiF | IPTC) header, if possible.  
+        # Extract useful information from (ExiF | IPTC) header, if possible.
         def exif_data
           @exif_data ||= returning Hash.new do |data|
             begin

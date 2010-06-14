@@ -95,6 +95,16 @@ module Hapgood # :nodoc:
           error.nil?
         end
 
+        # Does this source persist at the URI independent of this application?
+        def persistent?
+          raise "Not yet implemented"
+        end
+
+        # Can this source be modified by this application?
+        def readonly?
+          raise "Not yet implemented"
+        end
+
         # Destroy this source.
         def destroy
           @data = nil

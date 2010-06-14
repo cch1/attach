@@ -5,13 +5,13 @@ module Hapgood # :nodoc:
       class ActiveRecord < Hapgood::Attach::Sources::Base
         attr_reader :uri
 
-        # Create a new record identified by the given URI and store the given source in it. 
+        # Create a new record identified by the given URI and store the given source in it.
         def self.store(source, uri)
           attachment_id = uri.path.split('/')[-1]
           db_file = AttachmentBlob.create(:attachment_id => attachment_id, :blob => source.blob)
           self.new(db_file, source.metadata)
         end
-        
+
         # Reload a persisted source
         def self.reload(uri, metadata = {})
           attachment_id = uri.path.split('/')[-1]
@@ -25,22 +25,32 @@ module Hapgood # :nodoc:
           super
           # Nothing further to do: ActiveRecord association's :dependent option takes care of cleaning up blob.
         end
-        
+
+        # Does this source persist at the URI independent of this application?
+        def persistent?
+          true
+        end
+
+        # Can this source be modified by this application?
+        def readonly?
+          false
+        end
+
         # =Metadata=
         # None beyond the crude calculations in Base.
-        
+
         # =Data=
         # Return blob of data
         def blob
           dbf.blob
         end
-        
+
         private
         # Get this source from its persistent storage
         def id
           @id ||= uri.path.split('/')[-1]
         end
-        
+
         def dbf
           @data ||= AttachmentBlob.find_by_attachment_id(id)
         end

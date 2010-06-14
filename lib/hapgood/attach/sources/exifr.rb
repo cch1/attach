@@ -14,7 +14,17 @@ module Hapgood # :nodoc:
           self
         end
 
-        # =Metadata=        
+        # Does this source persist at the URI independent of this application?
+        def persistent?
+          @source.persistent?
+        end
+
+        # Can this source be modified by this application?
+        def readonly?
+          @source.readonly?
+        end
+
+        # =Metadata=
         def mime_type
           @source.mime_type
         end

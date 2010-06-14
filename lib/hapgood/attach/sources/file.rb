@@ -7,7 +7,7 @@ module Hapgood # :nodoc:
       class File < Hapgood::Attach::Sources::IO
         FMASK = 0644
         DMASK = 0755
-        # Create a new File at the given URI and store the given source in it. 
+        # Create a new File at the given URI and store the given source in it.
         def self.store(source, uri)
           p = Pathname(uri.path)
           FileUtils.mkdir_p(p.dirname, :mode => DMASK)
@@ -27,12 +27,22 @@ module Hapgood # :nodoc:
           self.new(f, metadata)
         end
 
+        # Does this source persist at the URI independent of this application?
+        def persistent?
+          true
+        end
+
+        # Can this source be modified by this application?
+        def readonly?
+          false
+        end
+
         # =Metadata=
         # Construct a URI using the file scheme.
         def uri
           @uri ||= URI.parse("file://localhost").merge(URI.parse(fn))
         end
-        
+
         # Returns a file name suitable for this source when saved in a persistent file.
         # This is a fallback as the basename can be cryptic in many case.
         def filename
@@ -61,7 +71,7 @@ module Hapgood # :nodoc:
         def io
           file
         end
-        
+
         # =State Transitions=
         def destroy
           begin

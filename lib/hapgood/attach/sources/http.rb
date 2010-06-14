@@ -29,10 +29,22 @@ module Hapgood # :nodoc:
               end
           end
         end
-      
+
         def initialize(uri, m = {})
           super
           @uri = @data
+        end
+
+        # Does this source persist at the URI independent of this application?
+        # This is a matter of interpretation of the stability of the host.
+        # TODO: allow overriding this attribute
+        def persistent?
+          true
+        end
+
+        # Can this source be modified by this application?
+        def readonly?
+          true
         end
 
         # =Metadata=
@@ -45,29 +57,29 @@ module Hapgood # :nodoc:
         def size
           response.content_length
         end
-        
+
         # Returns the Mime::Type of the source.
         def mime_type
           Mime::Type.lookup(response.content_type)
         end
-        
+
         # Return the MD5 digest of the source
         def digest
           Base64.decode64(response['Content-MD5']) if response['Content-MD5']
         end
-        
+
         # =Data=
         # Return data from remote source as a blob string
         def blob
           response(:get).body
         end
-        
+
         private
         # Returns the response from the remote server
         def response(method = :head)
           return @response if @method == method
           @method = method
-          @response = self.class.download(uri, method) 
+          @response = self.class.download(uri, method)
         end
       end
     end

@@ -2,6 +2,16 @@ module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources
       class LocalAsset < Hapgood::Attach::Sources::File
+        # Does this source persist at the URI independent of this application?
+        def persistent?
+          true
+        end
+
+        # Can this source be modified by this application?
+        def readonly?
+          true
+        end
+
         # =Metadata=
         def uri
           @data
@@ -17,7 +27,7 @@ module Hapgood # :nodoc:
         def fn
           ::File.join(RAILS_ROOT, 'public', uri.path)
         end
-        
+
         def file
           ::File.open(fn)
         end
