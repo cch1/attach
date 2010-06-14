@@ -83,7 +83,7 @@ class ModelTest < ActiveSupport::TestCase
     assert_difference 'Attachment.count', 2 do
       a = Attachment.create(:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary))
       assert !a.instance_variable_get(:@source_updated)
-      assert a._aspects.empty?
+      assert a._aspects.empty? # no aspects left to create
       a.save
     end
   end
@@ -110,6 +110,20 @@ class ModelTest < ActiveSupport::TestCase
     end
   end
 
+  def test_store_only_when_requested
+    Attachment.attachment_options[:store] = Proc.new {|i, a, e| "file://localhost#{::File.join(RAILS_ROOT, 'public', 'attachments', [i,a].compact.join('_'))}"}
+    url = 'http://www.memoryminer.com/graphics/missingphoto.jpg'
+    a = Attachment.create(:url => url, :_aspects => [:thumbnail], :store => false)
+    assert_kind_of Hapgood::Attach::Sources::EXIFR, a.source # Confirm we didn't fetch the source but did process it
+  end
+
+  def test_store_when_requested
+    Attachment.attachment_options[:store] = Proc.new {|i, a, e| "file://localhost#{::File.join(RAILS_ROOT, 'public', 'attachments', [i,a].compact.join('_'))}"}
+    url = 'http://www.memoryminer.com/graphics/missingphoto.jpg'
+    a = Attachment.create(:url => url, :_aspects => [], :store => true)
+    assert_kind_of Hapgood::Attach::Sources::File, a.source # Confirm we stored locally
+  end
+
   def test_create_attachment_via_url_with_default_aspects
     Attachment.attachment_options[:_aspects] = [:thumbnail]
     assert_difference 'Attachment.count', 2 do
@@ -118,7 +132,6 @@ class ModelTest < ActiveSupport::TestCase
       assert a.valid?, a.errors.full_messages.first
       assert_not_nil a.filename
       assert_equal "missingphoto.jpg", a.filename
-      assert_kind_of Hapgood::Attach::Sources::EXIFR, a.source # Confirm we optimistically fetched the source and extracted info
       assert_equal url, a.url
       assert_not_nil a.metadata
       assert_equal "800x600", a.image_size
@@ -137,6 +150,7 @@ class ModelTest < ActiveSupport::TestCase
       assert_equal 3034, a.size
       assert_kind_of Hapgood::Attach::Sources::Http, a.source # Confirm we didn't fetch the source
       assert_not_nil aspect = a.aspects.find_by_aspect('thumbnail')
+      assert_kind_of Hapgood::Attach::Sources::Http, aspect.source # Confirm we didn't fetch the aspect source either
     end
   end
 

@@ -159,7 +159,6 @@ module Hapgood # :nodoc:
       # Setter for the (uploaded) file.
       def file=(upload)
         return unless upload
-        self.store = true if store.nil?
         destroy_source  # Discard any existing source
         aspects.clear
         begin
@@ -177,7 +176,6 @@ module Hapgood # :nodoc:
       def url=(u)
         @url = u
         return unless u
-        self.store = false if store.nil?
         destroy_source  # Discard any existing source
         aspects.clear
         begin
@@ -269,8 +267,12 @@ module Hapgood # :nodoc:
 
       # Ensure source is valid, and if not, update the ActiveRecord errors object with the source error.
       def valid_source?
-        message = source.nil? ? "Source not available" : source.error
-        field = @url.nil? ? :file : :url
+        message = if source.nil?
+          "Source not available"
+        else
+          source.error unless source.valid?
+        end
+        field = @url ? :url : (@file ? :file : :source)
         errors.add(field, message) if message
       end
 
@@ -309,12 +311,14 @@ module Hapgood # :nodoc:
       # Sources are saved to the location identified by the uri attribute if the store attribute is set.
       def save_source
         raise "No source provided" unless source
-        self.uri = (!store && source.uri) || self.class.storage_uri(uuid!, aspect, mime_type)
-        if @source_updated && uri.host == 'localhost'
-          logger.debug "Attach: SAVE SOURCE    #{self} (#{source} @ #{source.uri}) to #{uri}:#{store}\n"
-          self.source = Sources::Base.store(source, uri)
-          @source_updated = nil # Indicate that no further storage is necessary.
+        return unless @source_updated
+        if store || !source.persistent?
+          storage_uri = self.class.storage_uri(uuid!, aspect, mime_type)
+          logger.debug "Attach: SAVE SOURCE    #{self} (#{source} @ #{source.uri}) to #{storage_uri}\n"
+          self.source = Sources::Base.store(source, storage_uri)
         end
+        self.uri = source.uri # Remember the attachment source
+        @source_updated = nil # Indicate that no further storage is necessary.
       end
 
       def destroy_source
