@@ -62,7 +62,7 @@ module Hapgood # :nodoc:
 
         # Returns a closed Tempfile of source's data.
         def tempfile
-          returning ::Tempfile.new(filename, Hapgood::Attach.tempfile_path) do |tmp|
+          returning ::Tempfile.new(filename, tempfile_path) do |tmp|
             tmp.close
             ::FileUtils.cp(fn, tmp.path)
           end

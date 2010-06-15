@@ -11,6 +11,9 @@ module Hapgood # :nodoc:
       #   data            : A blob (string) of the attachment's data
       #   tempfile        : A tempfile of the attachment
       class Base
+        class_inheritable_accessor :tempfile_path, :instance_writer => false
+        write_inheritable_attribute(:tempfile_path, File.join(RAILS_ROOT, 'tmp', 'attach'))
+
         AvailableImageProcessing = Sources::Rmagick::StandardImageGeometry.keys
 
         attr_reader :error, :data
@@ -162,7 +165,7 @@ module Hapgood # :nodoc:
 
         # Return a closed Tempfile of source's data.
         def tempfile
-          returning(::Tempfile.new(filename, Hapgood::Attach.tempfile_path)) do |tmp|
+          returning(::Tempfile.new(filename, tempfile_path)) do |tmp|
             tmp.binmode
             tmp.write(blob)
             tmp.close

@@ -1,14 +1,12 @@
 module Hapgood # :nodoc:
   module Attach # :nodoc:
     @@default_processors = %w(ImageScience Rmagick MiniMagick)
-    @@tempfile_path      = File.join(RAILS_ROOT, 'tmp', 'attach')
     @@image_content_types = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png', 'image/jpg', 'image/bmp']
     @@program_content_types = ['text/html']
     @@icon_content_types = @@program_content_types + ['application/xls']
     @@content_types = @@image_content_types + @@icon_content_types
     mattr_reader :content_types, :image_content_types, :icon_content_types, :program_content_types
-    mattr_reader :tempfile_path, :default_processors
-    mattr_writer :tempfile_path
+    mattr_reader :default_processors
 
     class AspectError < StandardError;  end
     class AttachmentError < StandardError; end

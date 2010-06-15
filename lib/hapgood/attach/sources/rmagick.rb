@@ -75,7 +75,7 @@ module Hapgood # :nodoc:
 
         # Return the source's data as a tempfile.
         def tempfile
-          @tempfile ||= returning(::Tempfile.new(filename, Hapgood::Attach.tempfile_path)) do |t|
+          @tempfile ||= returning(::Tempfile.new(filename, tempfile_path)) do |t|
             t.close
             image.write(t.path)
           end

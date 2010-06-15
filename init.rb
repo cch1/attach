@@ -10,5 +10,4 @@ end
 
 require 'geometry'
 ActiveRecord::Base.send(:extend, Hapgood::Attach::ActMethods)
-Hapgood::Attach.tempfile_path = ATTACH_TEMPFILE_PATH if Object.const_defined?(:ATTACH_TEMPFILE_PATH)
-FileUtils.mkdir_p Hapgood::Attach.tempfile_path
+FileUtils.mkdir_p Hapgood::Attach::Sources::Base.tempfile_path
