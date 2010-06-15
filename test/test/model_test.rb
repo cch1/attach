@@ -9,9 +9,16 @@ class ModelTest < ActiveSupport::TestCase
     FileUtils.mkdir Attachment::FILE_STORE
     FileUtils.cp_r File.join(Fixtures::FILE_STORE, '.'), Attachment::FILE_STORE
     @ao = Attachment.attachment_options.dup
+
+    @test_bucket = 'attach_test'
+    @test_key = "a03340f7-ba9e-4e19-854f-c8fa8e651574.png"
+    raise "Suspicious bucket name for tests!" unless @test_bucket.match(/test/)
+    fn = Pathname(Fixtures::FILE_STORE) + attachments(:s3).filename
+    AWS::S3::S3Object.store(@test_key, File.open(fn, 'rb'), @test_bucket)
   end
 
   def teardown
+    AWS::S3::Bucket.find(@test_bucket).delete_all
     Attachment.attachment_options = @ao
     FileUtils.rm_rf Attachment::FILE_STORE
   end
@@ -25,8 +32,7 @@ class ModelTest < ActiveSupport::TestCase
       assert_equal "ge5u7B+cjoGzXxRpeXzAzA==", Base64.encode64(a.digest).chomp!  # Base64.encode64(Digest::MD5.digest(File.read('test/fixtures/attachments/SperrySlantStar.bmp'))).chomp!
       assert_equal 4534, a.size
       assert a.aspects.empty?
-      assert a.uri.absolute?
-      assert_equal 'file', a.uri.scheme
+      assert a.source.persistent?
     end
   end
 
@@ -39,8 +45,7 @@ class ModelTest < ActiveSupport::TestCase
       assert_equal "1B2M2Y8AsgTpgAmY7PhCfg==", Base64.encode64(a.digest).chomp!  # Base64.encode64(Digest::MD5.digest(File.read('test/fixtures/attachments/SperrySlantStar.bmp'))).chomp!
       assert_equal 0, a.size
       assert a.aspects.empty?
-      assert a.uri.absolute?
-      assert_equal 'file', a.uri.scheme
+      assert a.source.persistent?
     end
   end
 
@@ -98,7 +103,7 @@ class ModelTest < ActiveSupport::TestCase
       assert_equal 25535, a.size
       assert_equal 320, a.metadata[:width]
       assert_equal 256, a.metadata[:height]
-      assert_equal 'file', a.uri.scheme
+      assert a.source.persistent?
       assert a.metadata.any?
       assert a.metadata.has_key?(:time)
       assert a.metadata[:time].acts_like?(:time)
@@ -107,6 +112,7 @@ class ModelTest < ActiveSupport::TestCase
       assert_equal 102, aspect.metadata[:height]
       assert_operator 4616..4636, :include?, aspect.size
       assert_operator 4616..4636, :include?, aspect.blob.size
+      assert aspect.source.persistent?
     end
   end
 

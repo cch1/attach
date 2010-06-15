@@ -1,12 +1,16 @@
 require 'uuidtools'
 class Attachment < ActiveRecord::Base
-  FILE_STORE = "#{RAILS_ROOT}/public/attachments"
+  FILE_STORE = File.join(RAILS_ROOT, 'public', 'attachments')
+  S3_BUCKET = 'attach_test'
 
   serialize :metadata, Hash
 
   attr_protected([:mime_type, :size, :filename, :digest])
 
-  has_attachment(:size => 0.byte..15.megabytes)
+  fssp = Proc.new {|i, a, e| "file://localhost#{::File.join(FILE_STORE, [[i,a].compact.join('_'), e].join('.'))}"}
+  s3sp = Proc.new {|i, a, e| "s3:/#{::File.join(S3_BUCKET, [[i,a].compact.join('_'), e].join('.'))}"}
+  dbsp = Proc.new {|i, a, e| "db:/#{i}"}
+  has_attachment(:size => 0.byte..15.megabytes, :store => fssp)
   
   validates_as_attachment
 
