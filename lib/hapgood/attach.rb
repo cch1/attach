@@ -68,7 +68,6 @@ module Hapgood # :nodoc:
             m.belongs_to :parent, :class_name => base_class.to_s
           end
 
-          has_one :attachment_blob, :class_name => 'Hapgood::Attach::AttachmentBlob', :dependent => :destroy if Hapgood::Attach::AttachmentBlob.table_exists?
           delegate :blob, :to => :source
 
           before_validation :process!

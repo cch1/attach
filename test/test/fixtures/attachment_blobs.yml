@@ -7,18 +7,10 @@ end
 %>
 
 one:
-  id: <%= Fixtures.identify(:one) %>
   blob: <%= fixture_data('rails.png') %>
-  attachment_id: <%= Fixtures.identify(:one) %>
 one_thumb:
-  id: <%= Fixtures.identify(:one_thumb) %>
   blob: <%= fixture_data('rails.png') %>
-  attachment_id: <%= Fixtures.identify(:one_thumbnail) %>
 two:
-  id: <%= Fixtures.identify(:two) %>
   blob: <%= fixture_data('AlexOnBMW#4.jpg') %>
-  attachment_id: <%= Fixtures.identify(:two) %>
 sss:
-  id: <%= Fixtures.identify(:sss) %>
   blob: <%= fixture_data('SperrySlantStar.bmp') %>
-  attachment_id: <%= Fixtures.identify(:sss) %>

@@ -11,10 +11,18 @@ def size(name)
   fn = File.join(Fixtures::FILE_STORE, name)
   File.size(fn)
 end
+
+def file_uri(i, a, e)
+  "file://localhost#{::File.join(Attachment::FILE_STORE, [[i,a].compact.join('_'), e].join('.'))}"
+end
+
+def db_uri(i, a, e)
+  "db:/#{i}"
+end
 %>
 
 one:
-  uri: <%= Attachment.storage_uri('plus', nil, :png) %>
+  uri: <%= file_uri('plus', nil, :png) %>
   content_type: image/png
   digest: <%= digest('plus.png') %>
   size: <%= size('plus.png') %>
@@ -24,7 +32,7 @@ one:
   description: My Description
   parent: ~
 one_thumbnail:
-  uri: <%= Attachment.storage_uri('plus', 'thumbnail', :png) %>
+  uri: <%= file_uri('plus', 'thumbnail', :png) %>
   content_type: image/png
   digest: <%= digest('plus_thumbnail.png') %>
   size: <%= size('plus_thumbnail.png') %>
@@ -34,7 +42,7 @@ one_thumbnail:
   description: ~
   parent: one
 two:
-  uri: <%= Attachment.storage_uri('rails', nil, :png) %>
+  uri: <%= file_uri('rails', nil, :png) %>
   content_type: image/png
   digest: <%= digest('rails.png') %>
   size: <%= size('rails.png') %>
@@ -44,7 +52,7 @@ two:
   description: ~
   parent: ~
 sss:
-  uri: <%= Attachment.storage_uri('SperrySlantStar', nil, :bmp) %>
+  uri: <%= file_uri('SperrySlantStar', nil, :bmp) %>
   content_type: image/bmp
   digest: <%= digest('SperrySlantStar.bmp') %>
   size: <%= size('SperrySlantStar.bmp') %>
@@ -64,12 +72,22 @@ remote:
   description: ~
   parent: ~
 missing:
-  uri: <%= Attachment.storage_uri('xrails', nil, :png) %>
+  uri: <%= file_uri('xrails', nil, :png) %>
   content_type: image/png
   digest: <%= digest('rails.png') %>
   size: <%= size('rails.png') %>
   aspect: ~
   filename: MyString
   metadata: "<%= {:time => DateTime.parse('Mon, 16 Nov 1998 11:39:37 +0000')}.to_yaml %>"
+  description: ~
+  parent: ~
+db_sss:
+  uri: <%= db_uri(Fixtures.identify(:sss), nil, :bmp) %>
+  content_type: image/bmp
+  digest: <%= digest('SperrySlantStar.bmp') %>
+  size: <%= size('SperrySlantStar.bmp') %>
+  aspect: ~
+  filename: SperrySlantStar.bmp
+  metadata: ~
   description: ~
   parent: ~

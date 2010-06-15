@@ -121,30 +121,6 @@ class SourceTest < ActiveSupport::TestCase
     end
   end
 
-  def test_store_source_to_db
-    tf = fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)
-    s = Hapgood::Attach::Sources::Base.load(tf)
-    uri = ::URI.parse("db://localhost").merge(::URI.parse('12345'))
-    s = Hapgood::Attach::Sources::Base.store(s, uri)
-    assert dbf = Hapgood::Attach::AttachmentBlob.find(:first, :conditions => {:attachment_id => 12345})
-    assert_equal 4534, dbf.blob.size
-  end
-
-  def test_reload_source_from_db_uri
-    id = Fixtures.identify('one')
-    uri = ::URI.parse("db://localhost").merge(::URI.parse(id.to_s))
-    s = Hapgood::Attach::Sources::Base.reload(uri)
-    assert_equal 1787, s.size
-  end
-
-  def test_reload_source_from_invalid_db_uri
-    id = Fixtures.identify('xone')
-    uri = ::URI.parse("db://localhost").merge(::URI.parse(id.to_s))
-    assert_raises RuntimeError do
-      s = Hapgood::Attach::Sources::Base.reload(uri)
-    end
-  end
-
   def test_reload_source_from_file_uri
     path = File.join(FILE_STORE, 'rails.png')
     uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
@@ -173,14 +149,6 @@ class SourceTest < ActiveSupport::TestCase
     assert_kind_of Hapgood::Attach::Sources::LocalAsset, s
     assert_equal 14762, s.size
     assert_equal uri, s.uri
-  end
-
-  def test_destroy_db_backed_source
-    id = Fixtures.identify('one')
-    uri = ::URI.parse("db://localhost").merge(::URI.parse(id.to_s))
-    s = Hapgood::Attach::Sources::Base.reload(uri)
-    s.destroy
-    assert_nil Hapgood::Attach::AttachmentBlob.find(:first, :conditions => {:attachment_id => 12345})
   end
 
   def test_destroy_file_backed_source

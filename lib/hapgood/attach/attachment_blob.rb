@@ -1,6 +1,4 @@
 class Hapgood::Attach::AttachmentBlob < ActiveRecord::Base
-  belongs_to :attachment if table_exists?
-  
   # Summarize blob data
   def inspect
     safe_attributes = self.attributes

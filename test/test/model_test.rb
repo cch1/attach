@@ -228,7 +228,7 @@ class ModelTest < ActiveSupport::TestCase
   def test_delete_simple
     assert_difference 'Attachment.count', -1 do
       assert_difference 'Hapgood::Attach::AttachmentBlob.count', -1 do #DbFile.count
-        res = attachments(:sss).destroy
+        res = attachments(:db_sss).destroy
       end
     end
   end

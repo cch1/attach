@@ -13,8 +13,7 @@ ActiveRecord::Schema.define(:version => Time.now.utc.strftime("%Y%m%d%H%M%S")) d
   end
 
   create_table :attachment_blobs, :force => true do |t|
-    t.binary "blob", :null => false
-    t.integer "attachment_id", :null => false
+    t.binary :blob, :null => false
   end
 
   create_table :users, :force => true do |t|
