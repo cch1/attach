@@ -50,6 +50,7 @@ module Hapgood # :nodoc:
             when 'db' then Sources::ActiveRecord.reload(uri, metadata)
             when 'file' then Sources::File.reload(uri, metadata)
             when 's3' then Sources::S3.reload(uri, metadata)
+            when 'memory' then Sources::Memory.reload(uri, metadata)
             when nil then Sources::LocalAsset.new(uri, metadata)
             else raise "Source for scheme '#{uri.scheme}' not supported for reloading."
           end
@@ -80,6 +81,7 @@ module Hapgood # :nodoc:
             when 'file', nil then Sources::File.store(source, uri) # nil implies local storage in a relative path
             when 's3' then Sources::S3.store(source, uri)
             when 'db' then Sources::ActiveRecord.store(source, uri)
+            when 'memory' then Sources::Memory.store(source, uri)
             else raise "Don't know how to store to #{uri}."
           end
         end
