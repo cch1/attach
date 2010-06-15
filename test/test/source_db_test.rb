@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + '/test_helper.rb'
 
-class SourceTest < ActiveSupport::TestCase
+class SourceDbTest < ActiveSupport::TestCase
   include ActionController::TestProcess
 
   include ActionView::Helpers::AssetTagHelper
