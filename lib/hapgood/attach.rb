@@ -21,9 +21,7 @@ module Hapgood # :nodoc:
       # *  <tt>:resize</tt> - Used by RMagick to resize images.  Pass either an array of width/height, or a geometry string.
       # *  <tt>:thumbnails</tt> - Specifies a set of thumbnails to generate.  This accepts a hash of thumb types (key) and resizing options or sources.
       # *  <tt>:thumbnail_class</tt> - Set what class to use for thumbnails.  This attachment class is used by default.
-      # *  <tt>:path_prefix</tt> - path to store the uploaded files.  Uses public/#{table_name} by default for the filesystem, and just #{table_name}
-      #      for the S3 backend.  Setting this sets the :storage to :file_system.
-      # *  <tt>:storage</tt> - Use :file_system to specify the attachment data is stored with the file system.  Defaults to :db_system.
+      # *  <tt>:store</tt> - A proc that takes three arguments (id, aspect and extension) and returns a storage URI.
       #
       # Examples:
       #   has_attachment :max_size => 1.kilobyte
@@ -33,12 +31,6 @@ module Hapgood # :nodoc:
       #   has_attachment :content_type => :image, :resize_to => [50,50]
       #   has_attachment :content_type => ['application/pdf', :image], :resize_to => 'x50'
       #   has_attachment :_aspects => { :thumbnail => [50, 50] }
-      #   has_attachment :storage => :file_system, :path_prefix => 'public/files'
-      #   has_attachment :storage => :file_system, :path_prefix => 'public/files',
-      #     :content_type => :image, :resize_to => [50,50]
-      #   has_attachment :storage => :file_system, :path_prefix => 'public/files',
-      #     :_aspects => { :thumbnail => [50, 50], :geometry => 'x50' }
-      #   has_attachment :storage => :s3
       def has_attachment(options = {})
         # this allows you to redefine the acts' options for each subclass, however
         options[:min_size]         ||= 1
@@ -49,9 +41,7 @@ module Hapgood # :nodoc:
         options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Hapgood::Attach.image_content_types : t }.flatten unless options[:content_type].nil?
         options[:store]            ||= Proc.new {|i, a, e| "file://localhost#{::File.join(RAILS_ROOT, 'public', 'attachments', [[i,a].compact.join('_'), e].join('.'))}"}
 
-        unless options[:_aspects].is_a?(Array)
-          raise ArgumentError, ":The aspects option should be an array: e.g. :aspects => [:thumbnail, :proof]"
-        end
+        raise ArgumentError, ":The aspects option should be an array: e.g. :aspects => [:thumbnail, :proof]" unless options[:_aspects].is_a?(Array)
 
         # doing these shenanigans so that #attachment_options is available to processors and backends
         class_inheritable_accessor :attachment_options
