@@ -8,18 +8,19 @@ class ModelTest < ActiveSupport::TestCase
   def setup
     FileUtils.mkdir Attachment::FILE_STORE
     FileUtils.cp_r File.join(Fixtures::FILE_STORE, '.'), Attachment::FILE_STORE
-    @ao = Attachment.attachment_options.dup
 
-    @test_bucket = 'attach_test'
-    @test_key = "a03340f7-ba9e-4e19-854f-c8fa8e651574.png"
-    raise "Suspicious bucket name for tests!" unless @test_bucket.match(/test/)
-    fn = Pathname(Fixtures::FILE_STORE) + attachments(:s3).filename
-    AWS::S3::S3Object.store(@test_key, File.open(fn, 'rb'), @test_bucket)
+    test_key = "a03340f7-ba9e-4e19-854f-c8fa8e651574.png"
+    raise "Suspicious bucket name for tests!" unless Attachment::S3_BUCKET.match(/test/)
+    raise "Suspicious FILE_STORE for tests!" unless Attachment::FILE_STORE.match(/test/)
+    fn = Pathname(Fixtures::FILE_STORE) + 'rails.png'
+    AWS::S3::S3Object.store(test_key, File.open(fn, 'rb'), Attachment::S3_BUCKET)
+    Hapgood::Attach::Sources::Memory._store = {test_key => File.read(fn)}
+    @ao = Attachment.attachment_options.dup
   end
 
   def teardown
-    AWS::S3::Bucket.find(@test_bucket).delete_all
     Attachment.attachment_options = @ao
+    AWS::S3::Bucket.find(Attachment::S3_BUCKET).delete_all
     FileUtils.rm_rf Attachment::FILE_STORE
   end
 
@@ -117,17 +118,17 @@ class ModelTest < ActiveSupport::TestCase
   end
 
   def test_store_only_when_requested
-    Attachment.attachment_options[:store] = Proc.new {|i, a, e| "file://localhost#{::File.join(RAILS_ROOT, 'public', 'attachments', [i,a].compact.join('_'))}"}
-    url = 'http://www.memoryminer.com/graphics/missingphoto.jpg'
-    a = Attachment.create(:url => url, :_aspects => [:thumbnail], :store => false)
-    assert_kind_of Hapgood::Attach::Sources::EXIFR, a.source # Confirm we didn't fetch the source but did process it
+    assert_difference "Hapgood::Attach::Sources::Memory._store.keys.size", 1 do
+      url = 'http://www.memoryminer.com/graphics/missingphoto.jpg'
+      Attachment.create(:url => url, :_aspects => [:thumbnail], :store => false)
+    end
   end
 
   def test_store_when_requested
-    Attachment.attachment_options[:store] = Proc.new {|i, a, e| "file://localhost#{::File.join(RAILS_ROOT, 'public', 'attachments', [i,a].compact.join('_'))}"}
-    url = 'http://www.memoryminer.com/graphics/missingphoto.jpg'
-    a = Attachment.create(:url => url, :_aspects => [], :store => true)
-    assert_kind_of Hapgood::Attach::Sources::File, a.source # Confirm we stored locally
+    assert_difference "Hapgood::Attach::Sources::Memory._store.keys.size", 1 do
+      url = 'http://www.memoryminer.com/graphics/missingphoto.jpg'
+      Attachment.create(:url => url, :_aspects => [], :store => true)
+    end
   end
 
   def test_create_attachment_via_url_with_default_aspects
@@ -316,8 +317,7 @@ class ModelTest < ActiveSupport::TestCase
     assert_equal 4534, a.size
   end
 
-  def test_generate_storage_uri_with_proc_option
-    Attachment.attachment_options[:store] = Proc.new {|i, a, e| "file://localhost#{::File.join(RAILS_ROOT, 'public', 'attachments', [i,a].compact.join('_'))}"}
+  def test_generate_storage_uri_with_bogus_mime_type
     a = Attachment.create(:file => fixture_file_upload('attachments/ManagingAgileProjects.pdf', 'example/example', :binary), :_aspects => [])
     p = Pathname.new(a.uri.path)
     assert_no_match /example\/example/, p.to_s  # make sure bogus Mime::Type does not appear literally in path.

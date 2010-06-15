@@ -9,7 +9,7 @@ class SourceS3Test < ActiveSupport::TestCase
     @test_bucket = 'attach_test'
     @test_key = "a03340f7-ba9e-4e19-854f-c8fa8e651574.png"
     raise "Suspicious bucket name for tests!" unless @test_bucket.match(/test/)
-    fn = Pathname(Fixtures::FILE_STORE) + attachments(:s3).filename
+    fn = Pathname(Fixtures::FILE_STORE) + 'rails.png'
     AWS::S3::S3Object.store(@test_key, File.open(fn, 'rb'), @test_bucket)
   end
 

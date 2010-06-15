@@ -1,6 +1,6 @@
 require 'uuidtools'
 class Attachment < ActiveRecord::Base
-  FILE_STORE = File.join(RAILS_ROOT, 'public', 'attachments')
+  FILE_STORE = File.join(RAILS_ROOT, 'public', 'attach_test')
   S3_BUCKET = 'attach_test'
 
   serialize :metadata, Hash
@@ -10,8 +10,9 @@ class Attachment < ActiveRecord::Base
   fssp = Proc.new {|i, a, e| "file://localhost#{::File.join(FILE_STORE, [[i,a].compact.join('_'), e].join('.'))}"}
   s3sp = Proc.new {|i, a, e| "s3:/#{::File.join(S3_BUCKET, [[i,a].compact.join('_'), e].join('.'))}"}
   dbsp = Proc.new {|i, a, e| "db:/#{i}"}
-  has_attachment(:size => 0.byte..15.megabytes, :store => fssp)
-  
+  mock = Proc.new {|i, a, e| "memory:/#{[[i,a].compact.join('_'), e].join('.')}"}
+  has_attachment(:size => 0.byte..15.megabytes, :store => mock)
+
   validates_as_attachment
 
   def to_s
@@ -20,7 +21,7 @@ class Attachment < ActiveRecord::Base
       s << " [#{self[:aspect]}]" if self[:aspect]
     end
   end
-  
+
   before_save_attachment do |a|
     a.description ||= "Default Attachment Description"
   end
@@ -31,6 +32,6 @@ class Attachment < ActiveRecord::Base
 
   # Return a unique id used to tag this attachment's data.
   def uuid!
-    @uuid ||= ::UUID.timestamp_create.to_s 
+    @uuid ||= ::UUID.timestamp_create.to_s
   end
 end
