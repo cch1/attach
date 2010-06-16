@@ -54,6 +54,11 @@ module Hapgood # :nodoc:
         end
 
         # =Metadata=
+        # Return ::URI where this attachment is available via http
+        def public_uri
+          URI.parse(s3obj.url)
+        end
+
         # Returns a file name suitable for this source when saved in a persistent file.
         # The URI fallback is likely to be cryptic in many case.
         def filename

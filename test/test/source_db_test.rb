@@ -38,4 +38,11 @@ class SourceDbTest < ActiveSupport::TestCase
     s.destroy
     assert !Hapgood::Attach::AttachmentBlob.exists?(id)
   end
+
+  def test_public_path
+    id = Fixtures.identify('one')
+    uri = ::URI.parse("db://localhost").merge(::URI.parse(id.to_s))
+    s = Hapgood::Attach::Sources::Base.reload(uri)
+    assert_nil s.public_uri
+  end
 end

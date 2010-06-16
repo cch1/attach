@@ -48,6 +48,11 @@ module Hapgood # :nodoc:
         end
 
         # =Metadata=
+        # Return ::URI where this attachment is available via http
+        def public_uri
+          @uri
+        end
+
         # Returns a filename suitable for naming this attachment.
         def filename
           uri.path.split('/')[-1]

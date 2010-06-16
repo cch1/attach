@@ -43,6 +43,14 @@ module Hapgood # :nodoc:
           @uri ||= URI.parse("file://localhost").merge(URI.parse(fn))
         end
 
+        # Return ::URI where this attachment is available via http
+        def public_uri
+          pp = Pathname(fn).relative_path_from(Pathname.new(Rails.public_path))
+          pp.to_s.match(/\.\./) ? nil : URI.parse(pp)
+        rescue ArgumentError
+          nil # no public path exits
+        end
+
         # Returns a file name suitable for this source when saved in a persistent file.
         # This is a fallback as the basename can be cryptic in many case.
         def filename

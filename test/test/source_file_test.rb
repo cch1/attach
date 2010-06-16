@@ -87,4 +87,23 @@ class SourceFileTest < ActiveSupport::TestCase
     s.destroy
     assert !File.readable?(path)
   end
+
+  uses_mocha "mock Rails.public_path" do
+    def test_public_path_available
+      Rails.stubs(:public_path).returns(File.join(Attachment::FILE_STORE, '..'))
+      path = File.join(Attachment::FILE_STORE, 'rails.png')
+      uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
+      s = Hapgood::Attach::Sources::Base.reload(uri)
+      assert_not_nil s.public_uri
+      assert Pathname.new(Rails.public_path).join(s.public_uri.to_s).exist?
+    end
+
+    def test_public_path_unavailable
+      Rails.stubs(:public_path).returns(File.join(Attachment::FILE_STORE, '..', 'sibling'))
+      path = File.join(Attachment::FILE_STORE, 'rails.png')
+      uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
+      s = Hapgood::Attach::Sources::Base.reload(uri)
+      assert_nil s.public_uri
+    end
+  end
 end

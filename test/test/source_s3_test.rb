@@ -1,4 +1,5 @@
 require File.dirname(__FILE__) + '/test_helper.rb'
+require 'net/http'
 
 class SourceS3Test < ActiveSupport::TestCase
   include ActionController::TestProcess
@@ -57,5 +58,16 @@ class SourceS3Test < ActiveSupport::TestCase
       s = Hapgood::Attach::Sources::Base.reload(uri)
       assert !File.size(s.tempfile.path).zero?
     end
+  end
+
+  def test_public_path
+    uri = ::URI.parse("s3:/#{@test_bucket}/#{@test_key}")
+    s = Hapgood::Attach::Sources::Base.reload(uri)
+    assert_not_nil uri = s.public_uri
+    Net::HTTP.new(uri.host, uri.port).start {|http|
+      # A HEAD request would be smarter, but apparently the expected HTTP method (GET) is included in the signature parameter.
+      response = http.request_get(uri.request_uri)
+      assert_kind_of Net::HTTPSuccess, response
+    }
   end
 end

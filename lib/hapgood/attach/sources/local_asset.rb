@@ -17,6 +17,11 @@ module Hapgood # :nodoc:
           @data
         end
 
+        # Return ::URI where this attachment is available via http
+        def public_uri
+          uri
+        end
+
         # =State Transitions=
         def destroy
           # Do nothing -a local asset should outlive any referencing source and its associated attachment.
@@ -25,7 +30,7 @@ module Hapgood # :nodoc:
         private
         # Returns the absolute path of the asset
         def fn
-          ::File.join(RAILS_ROOT, 'public', uri.path)
+          ::File.join(ActionView::Helpers::AssetTagHelper::ASSETS_DIR, uri.path)
         end
 
         def file

@@ -2,7 +2,8 @@ module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources
       # Abstract class for attachment sources.  All subclasses should implement:
-      #   uri             : A relative or absolute URI representing the attachment
+      #   uri             : A relative or absolute URI representing the attachment's persistent storage
+      #   public_uri      : A relative or absolute URI representing where the attachment is available via the http(s) scheme.
       #   size            : The size of the attachment in bytes
       #   digest          : The MD5 digest of the attachment data
       #   content_type    : The MIME type of the attachment, as a string.
@@ -118,8 +119,13 @@ module Hapgood # :nodoc:
         end
 
         # =Metadata=
-        # Return ::URI representing where this source is available.
+        # Return ::URI representing where this source is persisted.
         def uri
+          nil
+        end
+
+        # Return ::URI where this attachment is available via http
+        def public_uri
           nil
         end
 
