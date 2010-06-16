@@ -100,7 +100,8 @@ class SourceFileTest < ActiveSupport::TestCase
     end
 
     def test_public_path_unavailable
-      Rails.stubs(:public_path).returns(File.join(Attachment::FILE_STORE, '..', 'sibling'))
+      hidden_public = File.join(Rails.public_path, 'images')
+      Rails.stubs(:public_path).returns(hidden_public)
       path = File.join(Attachment::FILE_STORE, 'rails.png')
       uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
       s = Hapgood::Attach::Sources::Base.reload(uri)

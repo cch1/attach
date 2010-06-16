@@ -45,7 +45,7 @@ module Hapgood # :nodoc:
 
         # Return ::URI where this attachment is available via http
         def public_uri
-          pp = Pathname(fn).relative_path_from(Pathname.new(Rails.public_path))
+          pp = Pathname(fn).realpath.relative_path_from(Pathname.new(Rails.public_path).realpath)
           pp.to_s.match(/\.\./) ? nil : URI.parse("/" + pp)
         rescue ArgumentError
           nil # no public path exits
