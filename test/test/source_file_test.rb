@@ -95,7 +95,8 @@ class SourceFileTest < ActiveSupport::TestCase
       uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
       s = Hapgood::Attach::Sources::Base.reload(uri)
       assert_not_nil s.public_uri
-      assert Pathname.new(Rails.public_path).join(s.public_uri.to_s).exist?
+      assert Pathname.new(s.public_uri.path).absolute?
+      assert Pathname.new(Rails.public_path).join(s.public_uri.to_s[1..-1]).exist?
     end
 
     def test_public_path_unavailable
