@@ -33,19 +33,20 @@ module Hapgood # :nodoc:
         end
 
         def initialize(uri, m = {})
+          @uri = uri
           super
-          @uri = @data
         end
 
         def valid?
-          (!!s3obj).tap do |v|
-            @error = "Missing S3 object" unless v
-          end
+          !!s3obj
+        rescue
+          @error = "Missing S3 object"
+          false
         end
 
         # Does this source persist at the URI independent of this application?
         def persistent?
-          true
+          s3obj.stored?
         end
 
         # Can this source be modified by this application?
@@ -55,6 +56,7 @@ module Hapgood # :nodoc:
 
         # =Metadata=
         # Return ::URI where this attachment is available via http
+        # Note that this method returns a different URL everytime it is called!
         def public_uri
           URI.parse(s3obj.url)
         end
@@ -91,10 +93,9 @@ module Hapgood # :nodoc:
         def destroy
           begin
             s3obj.delete
-          rescue AWS::S3::NoSuchKey => e
-            raise MissingSource, e.to_s
+          rescue MissingSource
           ensure
-            super
+            freeze
           end
         end
 
@@ -104,8 +105,8 @@ module Hapgood # :nodoc:
             key = uri.path.split('/')[-1]
             bucket = uri.path.split('/')[1]
             S3Object.find(key, bucket)
-          rescue AWS::S3::NoSuchKey
-            nil
+          rescue AWS::S3::NoSuchKey => e
+            raise MissingSource, e.to_s
           end
         end
       end
