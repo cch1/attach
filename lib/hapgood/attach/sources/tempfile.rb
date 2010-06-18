@@ -2,7 +2,11 @@ module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources
       # Methods for Tempfile-based primary sources.
-      class Tempfile < Hapgood::Attach::Sources::File
+      class Tempfile < Hapgood::Attach::Sources::IO
+        def self.load(tempfile, metadata = {})
+          self.new(tempfile, metadata)
+        end
+
         # Does this source persist at the URI independent of this application?
         def persistent?
           false
@@ -14,15 +18,22 @@ module Hapgood # :nodoc:
         end
 
         # =Metadata=
-        # Returns the URI of the source.
-        def uri
-          nil
+        def public_uri
+          raise "Tempfile not available to public"
         end
 
         # =Data=
-        # Trivial short-circuit that returns the tempfile itself.
         def tempfile
-          @data
+          io
+        end
+
+        # =State Transitions=
+        def destroy
+          @data.delete
+          @data = nil
+        rescue Errno::ENOENT
+        ensure
+          freeze
         end
       end
     end

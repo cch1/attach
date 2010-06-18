@@ -8,12 +8,11 @@ class SourceDbTest < ActiveSupport::TestCase
   fixtures :attachments, :attachment_blobs
 
   def test_store_source_to_db
-    tf = fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)
-    s = Hapgood::Attach::Sources::Base.load(tf)
+    s0 = stubbed_source
     uri = ::URI.parse("db://localhost/")
-    s = Hapgood::Attach::Sources::Base.store(s, uri)
-    assert dbf = Hapgood::Attach::AttachmentBlob.find(s.uri.path.split('/')[-1])
-    assert_equal 4534, dbf.blob.size
+    s1 = Hapgood::Attach::Sources::ActiveRecord.store(s0, uri)
+    assert dbf = Hapgood::Attach::AttachmentBlob.find(s1.uri.path.split('/')[-1])
+    assert_equal s0.size, dbf.blob.size
   end
 
   def test_reload_source_from_db_uri
@@ -21,14 +20,6 @@ class SourceDbTest < ActiveSupport::TestCase
     uri = ::URI.parse("db://localhost").merge(::URI.parse(id.to_s))
     s = Hapgood::Attach::Sources::Base.reload(uri)
     assert_equal 1787, s.size
-  end
-
-  def test_reload_source_from_invalid_db_uri
-    id = Fixtures.identify('xone')
-    uri = ::URI.parse("db://localhost").merge(::URI.parse(id.to_s))
-    assert_raises ActiveRecord::RecordNotFound do
-      s = Hapgood::Attach::Sources::Base.reload(uri)
-    end
   end
 
   def test_destroy_db_backed_source
@@ -44,5 +35,28 @@ class SourceDbTest < ActiveSupport::TestCase
     uri = ::URI.parse("db://localhost").merge(::URI.parse(id.to_s))
     s = Hapgood::Attach::Sources::Base.reload(uri)
     assert_nil s.public_uri
+  end
+
+  def test_delete_with_missing_data
+    uri = ::URI.parse("db:/localhost/0")
+    s = Hapgood::Attach::Sources::ActiveRecord.new(uri, {})
+    assert_nothing_raised do
+      s.destroy
+    end
+  end
+
+  def test_invalid_with_missing_data
+    uri = ::URI.parse("db:/localhost/0")
+    s = Hapgood::Attach::Sources::ActiveRecord.new(uri, {})
+    assert_nothing_raised do
+      assert !s.valid?
+    end
+  end
+
+  def test_reload_with_missing_data
+    uri = ::URI.parse("db:/localhost/0")
+    assert_nothing_raised do
+      Hapgood::Attach::Sources::ActiveRecord.reload(uri)
+    end
   end
 end

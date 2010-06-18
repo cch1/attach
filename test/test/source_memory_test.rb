@@ -11,14 +11,13 @@ class SourceMemoryTest < ActiveSupport::TestCase
   end
 
   def test_store
-    tf = fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)
-    s0 = Hapgood::Attach::Sources::Base.load(tf)
+    s0 = stubbed_source
     key = "0000-0000-0000.bmp"
     uri = ::URI.parse("memory:/#{key}")
     s1 = Hapgood::Attach::Sources::Memory.store(s0, uri)
     assert s1.valid?
     assert_equal "memory", s1.uri.scheme
-    assert_equal uri, s1.uri # If a canonical representation including the host and bucket is supported, this may no longer be a valid test
+    assert_equal uri, s1.uri
     assert_equal s0.mime_type, s1.mime_type
     assert_equal s0.filename, s1.filename
     assert_equal s0.size, s1.size
@@ -43,5 +42,28 @@ class SourceMemoryTest < ActiveSupport::TestCase
     uri = ::URI.parse("memory:/#{key}")
     Hapgood::Attach::Sources::Base.reload(uri).destroy
     assert !Hapgood::Attach::Sources::Memory._store.has_key?(key)
+  end
+
+  def test_delete_with_missing_data
+    uri = ::URI.parse("memory:/something_missing")
+    s = Hapgood::Attach::Sources::Memory.new(uri, {})
+    assert_nothing_raised do
+      s.destroy
+    end
+  end
+
+  def test_invalid_with_missing_data
+    uri = ::URI.parse("memory:/something_missing")
+    s = Hapgood::Attach::Sources::Memory.new(uri, {})
+    assert_nothing_raised do
+      assert !s.valid?
+    end
+  end
+
+  def test_reload_with_missing_data
+    uri = ::URI.parse("memory:/something_missing")
+    assert_nothing_raised do
+      Hapgood::Attach::Sources::Memory.reload(uri)
+    end
   end
 end

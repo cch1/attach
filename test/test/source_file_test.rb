@@ -12,9 +12,9 @@ class SourceFileTest < ActiveSupport::TestCase
     FileUtils.rm_rf Attachment::FILE_STORE
   end
 
-  def test_load_source_from_file
+  def test_load
     f = ::File.open(File.join(Attachment::FILE_STORE, 'SperrySlantStar.bmp'), "rb")
-    s = Hapgood::Attach::Sources::Base.load(f)
+    s = Hapgood::Attach::Sources::File.load(f)
     assert_instance_of Hapgood::Attach::Sources::File, s
     assert s.valid?
     # Check data
@@ -32,55 +32,24 @@ class SourceFileTest < ActiveSupport::TestCase
     assert_equal 4534, s.size
   end
 
-  def test_store_source_to_file
-    tf = fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)
-    s = Hapgood::Attach::Sources::Base.load(tf)
+  def test_store
+    s0 = stubbed_source
     path = File.join(Attachment::FILE_STORE, 'uuid_aspect.extension')
     uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
-    s = Hapgood::Attach::Sources::Base.store(s, uri)
+    Hapgood::Attach::Sources::Base.store(s0, uri)
     assert stat = File.stat(path)
     assert_equal 0644, stat.mode & 0777
-    assert_equal 4534, File.size(path)
+    assert_equal s0.size, File.size(path)
   end
 
-  def test_store_source_to_file_with_relative_path
-    begin
-      tf = fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary)
-      s = Hapgood::Attach::Sources::Base.load(tf)
-      path = File.join(File.join('test', 'public', 'attachments'), 'uuid_aspect.extension')
-      uri = ::URI.parse(path)
-      s = Hapgood::Attach::Sources::Base.store(s, uri)
-      assert stat = File.stat(path)
-      assert_equal 0644, stat.mode & 0777
-      assert_equal 4534, File.size(path)
-    ensure
-      FileUtils.rm path
-    end
-  end
-
-  def test_reload_source_from_file_uri
+  def test_reload
     path = File.join(Attachment::FILE_STORE, 'rails.png')
     uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
     s = Hapgood::Attach::Sources::Base.reload(uri)
     assert_equal 1787, s.size
   end
 
-  def test_reload_source_from_relative_uri
-    path = File.join('..', 'public', 'attach_test', 'rails.png')
-    uri = ::URI.parse(path)
-    s = Hapgood::Attach::Sources::Base.reload(uri)
-    assert_equal 1787, s.size
-  end
-
-  def test_reload_source_from_invalid_file_uri
-    path = File.join(Attachment::FILE_STORE, 'xrails.png')
-    uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
-    assert_raises Hapgood::Attach::MissingSource do
-      s = Hapgood::Attach::Sources::Base.reload(uri)
-    end
-  end
-
-  def test_destroy_file_backed_source
+  def test_destroy
     path = File.join(Attachment::FILE_STORE, 'rails.png')
     uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
     s = Hapgood::Attach::Sources::Base.reload(uri)
@@ -106,6 +75,29 @@ class SourceFileTest < ActiveSupport::TestCase
       uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
       s = Hapgood::Attach::Sources::Base.reload(uri)
       assert_nil s.public_uri
+    end
+  end
+
+  def test_delete_with_missing_data
+    uri = ::URI.parse("file:/something_missing")
+    s = Hapgood::Attach::Sources::File.new(uri, {})
+    assert_nothing_raised do
+      s.destroy
+    end
+  end
+
+  def test_invalid_with_missing_data
+    uri = ::URI.parse("file:/something_missing")
+    s = Hapgood::Attach::Sources::File.new(uri, {})
+    assert_nothing_raised do
+      assert !s.valid?
+    end
+  end
+
+  def test_reload_with_missing_data
+    uri = ::URI.parse("file:/something_missing")
+    assert_nothing_raised do
+      Hapgood::Attach::Sources::File.reload(uri)
     end
   end
 end

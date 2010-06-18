@@ -14,6 +14,15 @@ module Hapgood # :nodoc:
       # OPTIMIZE: Add a callback to allow the HTTP connection to be nicely closed thus allowing us to open it and read it incrementally.
       class Http < Hapgood::Attach::Sources::Base
         attr_reader :uri
+        
+        def self.load(*args)
+          new(*args)
+        end
+        
+        def self.reload(*args)
+          new(*args)
+        end
+        
         # Download from a URI
         def self.download(uri, method = :head, count = 5)
           Net::HTTP.start(uri.host) do |http|
@@ -31,8 +40,15 @@ module Hapgood # :nodoc:
         end
 
         def initialize(uri, m = {})
+          @uri = uri
           super
-          @uri = @data
+        end
+
+        def valid?
+          !!response(:head)
+        rescue MissingSource => e
+          @error = e.to_s
+          false
         end
 
         # Does this source persist at the URI independent of this application?
@@ -70,7 +86,7 @@ module Hapgood # :nodoc:
 
         # Return the MD5 digest of the source
         def digest
-          Base64.decode64(response['Content-MD5']) if response['Content-MD5']
+          response['Content-MD5'] ? Base64.decode64(response['Content-MD5']) : super 
         end
 
         # =Data=
@@ -85,6 +101,8 @@ module Hapgood # :nodoc:
           return @response if @method == method
           @method = method
           @response = self.class.download(uri, method)
+        rescue => e
+          raise MissingSource, e.to_s
         end
       end
     end

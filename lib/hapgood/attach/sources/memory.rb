@@ -22,12 +22,12 @@ module Hapgood # :nodoc:
         end
 
         def initialize(uri, m = {})
+          @uri = uri
           super
-          @uri = @data
         end
 
         def valid?
-          true
+          _store.has_key?(key) || (@error = "No such key in store #{key}" && false)
         end
 
         # Does this source persist at the URI independent of this application?
@@ -73,7 +73,7 @@ module Hapgood # :nodoc:
         # =State Transitions=
         def destroy
           _store.delete(key)
-          super
+          freeze
         end
 
         private

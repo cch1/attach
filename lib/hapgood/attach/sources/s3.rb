@@ -39,8 +39,8 @@ module Hapgood # :nodoc:
 
         def valid?
           !!s3obj
-        rescue
-          @error = "Missing S3 object"
+        rescue MissingSource => e
+          @error = e.to_s
           false
         end
 
@@ -91,12 +91,10 @@ module Hapgood # :nodoc:
 
         # =State Transitions=
         def destroy
-          begin
-            s3obj.delete
-          rescue MissingSource
-          ensure
-            freeze
-          end
+          s3obj.delete
+        rescue MissingSource
+        ensure
+          freeze
         end
 
         private

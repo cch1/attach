@@ -208,22 +208,6 @@ class ModelTest < ActiveSupport::TestCase
     end
   end
 
-  # Should only create one attachment as the URL could not be retrieved and thus the default aspects are not built.
-  def test_create_attachment_with_preloaded_data
-    assert_difference 'Attachment.count', 1 do
-      a = Attachment.create(:uri => "http:/www.memoryminer.com/bogusresource.jpg", :size => 10240, :content_type => 'image/jpg', :_aspects => [])
-    end
-  end
-
-  # Both the aspect and the primary URL are not (yet) valid, but valid metadata is present.
-  def test_create_attachment_with_preloaded_data_and_aspect
-    assert_difference 'Attachment.count', 2 do
-      tparms = {:thumbnail => {:uri => "http://www.memoryminer.com/bogusresource-t.jpg", :size => 1024, :content_type => 'image/jpg'}}
-      aparms = {:uri => "http://www.memoryminer.com/bogusresource.jpg", :size => 10240, :content_type => 'image/jpg', :_aspects => tparms}
-      a = Attachment.create(aparms)
-    end
-  end
-
   def test_source_required_on_save
     assert_no_difference 'Attachment.count' do
       a = Attachment.new({})
@@ -339,5 +323,11 @@ class ModelTest < ActiveSupport::TestCase
     assert i = a.aspects.find_by_aspect('icon')
     assert_match /application_pdf\.png/, i.uri.path
     assert_nil i.uri.scheme
+  end
+
+  def test_destroy_with_missing_source
+    assert_nothing_raised do
+      attachments(:missing).destroy
+    end
   end
 end

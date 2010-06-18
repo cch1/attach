@@ -7,6 +7,14 @@ module Hapgood # :nodoc:
       class File < Hapgood::Attach::Sources::IO
         FMASK = 0644
         DMASK = 0755
+
+        attr_reader :uri
+
+        def self.load(file, metadata = {})
+          uri = URI.parse('file://localhost/').merge(::File.expand_path(file.path))
+          self.new(uri, metadata)
+        end
+
         # Create a new File at the given URI and store the given source in it.
         def self.store(source, uri)
           p = Pathname(uri.path)
@@ -14,17 +22,24 @@ module Hapgood # :nodoc:
           raise "Target file already exists! (#{p}) " if p.exist?
           FileUtils.cp(source.tempfile.path, uri.path)
           p.chmod(FMASK) if FMASK
-          self.new(p.open, source.metadata)
+          self.new(uri, source.metadata)
         end
 
         # Reload a persisted source
         def self.reload(uri, metadata = {})
-          begin
-            f = ::File.open(URI.decode(uri.path), "r+b")
-          rescue Errno::ENOENT => e
-            raise MissingSource, e.to_s
-          end
-          self.new(f, metadata)
+          self.new(uri, metadata)
+        end
+
+        def initialize(uri, m = {})
+          @uri = uri
+          super
+        end
+
+        def valid?
+          !!file
+        rescue MissingSource => e
+          @error = e.to_s
+          false
         end
 
         # Does this source persist at the URI independent of this application?
@@ -34,18 +49,13 @@ module Hapgood # :nodoc:
 
         # Can this source be modified by this application?
         def readonly?
-          false
+          frozen? || !pathname.writeable?
         end
 
         # =Metadata=
-        # Construct a URI using the file scheme.
-        def uri
-          @uri ||= URI.parse("file://localhost").merge(URI.parse(fn))
-        end
-
         # Return ::URI where this attachment is available via http
         def public_uri
-          pp = Pathname(fn).realpath.relative_path_from(Pathname.new(Rails.public_path).realpath)
+          pp = Pathname(uri.path).realpath.relative_path_from(Pathname.new(Rails.public_path).realpath)
           pp.to_s.match(/\.\./) ? nil : URI.parse("/" + pp)
         rescue ArgumentError
           nil # no public path exits
@@ -54,12 +64,12 @@ module Hapgood # :nodoc:
         # Returns a file name suitable for this source when saved in a persistent file.
         # This is a fallback as the basename can be cryptic in many case.
         def filename
-          @metadata[:filename] || ::File.basename(fn)
+          @metadata[:filename] || pathname.basename.to_s
         end
 
         # As a fallback, guess at the MIME type of the file using the extension.
         def mime_type
-          @metadata[:mime_type] || Mime::Type.lookup_by_extension(::File.extname(fn)[1..-1])
+          @metadata[:mime_type] || Mime::Type.lookup_by_extension(pathname.extname[1..-1])
         end
 
         # =Data=
@@ -72,7 +82,7 @@ module Hapgood # :nodoc:
         def tempfile
           returning ::Tempfile.new(filename, tempfile_path) do |tmp|
             tmp.close
-            ::FileUtils.cp(fn, tmp.path)
+            ::FileUtils.cp(pathname.to_s, tmp.path)
           end
         end
 
@@ -82,22 +92,21 @@ module Hapgood # :nodoc:
 
         # =State Transitions=
         def destroy
-          begin
-            FileUtils.rm fn
-          rescue Errno::ENOENT => e
-            raise MissingSource, e.to_s
-          ensure
-            super
-          end
+          pathname.delete
+        rescue Errno::ENOENT
+        ensure
+          freeze
         end
 
         private
-        def fn
-          @data.path
+        def pathname
+          @pathname ||= Pathname.new(uri.path)
         end
 
         def file
-          @data
+          pathname.open
+        rescue Errno::ENOENT => e
+          raise MissingSource, e.to_s
         end
       end
     end

@@ -24,44 +24,42 @@ module Hapgood # :nodoc:
         # Loads data from a primary source with bonus/primer metadata.  Primary sources can be either rich sources (capable of supplying raw
         # attachment data and metadata) or simple sources (only able to provide raw data).  Every storage source should also be a primary source.
         def self.load(raw_source = nil, metadata = {})
-          case raw_source
-            when ::ActionController::UploadedStringIO then Sources::IO.new(raw_source, metadata)
-            when ::ActionController::UploadedTempfile then Sources::Tempfile.new(raw_source, metadata)
+          klass = case raw_source
             when ::URI  # raw source is actually a reference to an external source
               case raw_source.scheme
-                when 'http', 'https' then Sources::Http.new(raw_source, metadata)
-                when nil then Sources::LocalAsset.new(raw_source, metadata)
+                when 'http', 'https' then Sources::Http
                 else raise "Source for scheme '#{raw_source.scheme}' not supported for loading."
               end
-            when ::File then Sources::File.new(raw_source, metadata)
-            when ::Tempfile then Sources::Tempfile.new(raw_source, metadata)
-            when ::IO then Sources::IO.new(raw_source, metadata)
-            when ::String then Sources::Blob.new(raw_source, metadata)
-            when nil then self.new
-            when defined?(::ActionController::TestUploadedFile) && ::ActionController::TestUploadedFile then Sources::Tempfile.new(raw_source, metadata)
+            when ::Pathname then Sources::LocalAsset
+            when ::File then Sources::File
+            when ::Tempfile, ::ActionController::UploadedTempfile then Sources::Tempfile
+            when ::IO, ::ActionController::UploadedStringIO then Sources::IO
+            when ::String then Sources::Blob
+            when defined?(::ActionController::TestUploadedFile) && ::ActionController::TestUploadedFile then Sources::Tempfile
             else
               raise "Don't know how to load #{raw_source.class}."
           end
+          klass.load(raw_source, metadata)
         end
 
         def self.reload(uri, metadata = {})
-          case uri.scheme
-            when 'http', 'https' then Sources::Http.new(uri, metadata)
-            # Following operations use URI to load a persisted source from storage
-            when 'db' then Sources::ActiveRecord.reload(uri, metadata)
-            when 'file' then Sources::File.reload(uri, metadata)
-            when 's3' then Sources::S3.reload(uri, metadata)
-            when 'memory' then Sources::Memory.reload(uri, metadata)
-            when nil then Sources::LocalAsset.new(uri, metadata)
+          klass = case uri.scheme
+            when 'http', 'https' then Sources::Http
+            when 'db' then Sources::ActiveRecord
+            when 'file' then Sources::File
+            when 's3' then Sources::S3
+            when 'memory' then Sources::Memory
+            when nil then Sources::LocalAsset
             else raise "Source for scheme '#{uri.scheme}' not supported for reloading."
           end
+          klass.reload(uri, metadata)
         end
 
         # Process the given source with the given transformation.
         def self.process(source, transform = :identity)
           transform = transform.to_sym
           case transform
-            when :icon then Sources::LocalAsset.new(::URI.parse(icon_path(source.mime_type)))
+            when :icon then Sources::LocalAsset.load(icon_path(source.mime_type))
 #              when :thumbshot then Source::Thumbshooter.new(source).process()
 #              when :sample then Source::MPEGSampler.new(source).process()
             when *Sources::Rmagick::StandardImageGeometry.keys
@@ -77,19 +75,19 @@ module Hapgood # :nodoc:
 
         # Store the given source at the given URI.
         def self.store(source, uri)
-          case uri.scheme
-#            when 'http', 'https' then Sources::Http.new(uri)   # Need ARes to pull this off...
-            when 'file', nil then Sources::File.store(source, uri) # nil implies local storage in a relative path
-            when 's3' then Sources::S3.store(source, uri)
-            when 'db' then Sources::ActiveRecord.store(source, uri)
-            when 'memory' then Sources::Memory.store(source, uri)
+          klass = case uri.scheme
+            when 'file' then Sources::File
+            when 's3' then Sources::S3
+            when 'db' then Sources::ActiveRecord
+            when 'memory' then Sources::Memory
             else raise "Don't know how to store to #{uri}."
           end
+          klass.store(source, uri)
         end
 
         def self.icon_path(mt)
           name = mt.to_s.gsub('/', '_')
-          image_path("mime_type_icons/#{name}.png")
+          Pathname.new(ActionView::Helpers::AssetTagHelper::ASSETS_DIR).join('images', 'mime_type_icons', "#{name}.png")
         end
 
         def initialize(d = nil, m = nil)
