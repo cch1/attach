@@ -173,12 +173,7 @@ module Hapgood # :nodoc:
 
       # Get the source.  Rescue exceptions and make them errors on the source virtual attribute.
       def source
-        begin
-          @source ||= uri && Sources::Base.reload(uri, stored_metadata)
-        rescue => e
-          self.errors.add(:source, e.to_s)
-          return nil
-        end
+        @source ||= uri && Sources::Base.reload(uri, stored_metadata)
       end
 
       # Set the source.
