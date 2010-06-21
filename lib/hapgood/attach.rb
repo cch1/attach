@@ -150,7 +150,8 @@ module Hapgood # :nodoc:
         aspects.clear
         begin
           self.source = Sources::Base.load(upload, cgi_metadata(upload))
-        rescue  # Can't do much here -we have to wait until the validation phase to resurrect/reconstitute errors
+        rescue => e  # Can't do much here -we have to wait until the validation phase to resurrect/reconstitute errors
+          logger.error("Attach: *********ERROR: can't load uploaded file (#{e})")
         end
       end
 
@@ -167,7 +168,8 @@ module Hapgood # :nodoc:
         aspects.clear
         begin
           self.source = Sources::Base.load(::URI.parse(u))
-        rescue  # Can't do much here -we have to wait until the validation phase to resurrect/reconstitute errors
+        rescue => e  # Can't do much here -we have to wait until the validation phase to resurrect/reconstitute errors
+          logger.error("Attach: *********ERROR: can't load url (#{e})")
         end
       end
 

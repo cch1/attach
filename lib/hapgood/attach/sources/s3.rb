@@ -14,7 +14,7 @@ module Hapgood # :nodoc:
           key = uri.path.split('/')[-1]
           bucket = uri.path.split('/')[1]
           raise "Target object already exists! (#{key}) " if S3Object.exists?(key, bucket)
-          S3Object.store(key, source.blob, bucket)
+          S3Object.store(key, source.blob, bucket, :access => config[:access])
           self.new(uri, source.metadata)
         end
 
@@ -24,7 +24,7 @@ module Hapgood # :nodoc:
         end
 
         def self.config
-          @@config ||= {:credentials => {:secret_access_key => nil, :access_key_id => nil}}
+          @@config ||= {:credentials => {:secret_access_key => nil, :access_key_id => nil}, :access => :private}
         end
 
         def self.establish_connection!
