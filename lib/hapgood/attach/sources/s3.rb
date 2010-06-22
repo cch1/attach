@@ -1,4 +1,5 @@
 require 'aws/s3'
+require 'hapgood/attach/sources/base'
 
 module Hapgood # :nodoc:
   module Attach # :nodoc:

@@ -1,4 +1,6 @@
 require 'exifr'
+require 'hapgood/attach/sources/base'
+
 module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources

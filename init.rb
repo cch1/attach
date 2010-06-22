@@ -1,3 +1,4 @@
+require 'hapgood/attach'
 require 'tempfile'
 
 Tempfile.class_eval do
