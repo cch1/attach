@@ -1,4 +1,4 @@
-require 'rmagick'
+require 'RMagick'
 require 'hapgood/attach/sources/base'
 
 module Hapgood # :nodoc:
