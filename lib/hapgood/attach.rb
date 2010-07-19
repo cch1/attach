@@ -134,7 +134,7 @@ module Hapgood # :nodoc:
       # Returns predicate based on attachment being hosted locally (will be stored locally or already stored locally)
       # OPTIMIZE: Consider having this be a method on source for encapsulation.
       def local?
-        uri && %w(file db s3).include?(uri.scheme)
+        !(source.kind_of?(Sources::Http) && !store)
       end
 
       # Returns the width/height in a suitable format for the image_tag helper: (100x100)
@@ -159,7 +159,7 @@ module Hapgood # :nodoc:
 
       # Getter for url virtual attribute for consistency with setter.  Useful in case this field is used in a form.
       def url
-        @url ||= local? ? nil : uri.to_s
+        @url ||= source.kind_of?(Sources::Http) && uri.to_s
       end
 
       # Setter for virtual url attribute used to reference external data sources.
