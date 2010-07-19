@@ -159,7 +159,7 @@ module Hapgood # :nodoc:
 
       # Getter for url virtual attribute for consistency with setter.  Useful in case this field is used in a form.
       def url
-        @url ||= source.kind_of?(Sources::Http) && uri.to_s
+        @url ||= source.kind_of?(Sources::Http) ? uri.to_s : nil
       end
 
       # Setter for virtual url attribute used to reference external data sources.
