@@ -325,6 +325,13 @@ class ModelTest < ActiveSupport::TestCase
     assert_nil i.uri.scheme
   end
 
+  def test_source_metadata_is_assigned_to_attributes
+    a = Attachment.new(:file => fixture_file_upload('attachments/ManagingAgileProjects.pdf', 'application/pdf', :binary), :_aspects => [:icon])
+    assert_equal 144866, a.size
+    assert_equal 'application/pdf', a.content_type
+    assert_equal "ManagingAgileProjects.pdf", a.filename
+  end
+
   def test_destroy_with_missing_source
     assert_nothing_raised do
       attachments(:missing).destroy
