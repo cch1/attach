@@ -65,6 +65,10 @@ module Hapgood # :nodoc:
           @metadata[:mime_type] || Mime::Type.lookup_by_extension(pathname.extname[1..-1])
         end
 
+        def last_modified
+          pathname.mtime
+        end
+
         # =Data=
         def blob
           io.rewind

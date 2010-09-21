@@ -50,6 +50,7 @@ module Hapgood # :nodoc:
         end
 
         # =Metadata=
+        # TODO: Add last_modified predicated on DB field presence
 
         # =Data=
         # Return blob of data

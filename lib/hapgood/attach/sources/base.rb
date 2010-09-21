@@ -149,6 +149,11 @@ module Hapgood # :nodoc:
           Digest::MD5.digest(blob)
         end
 
+        # Return the time this source was last modified
+        def last_modified
+          @metadata[:last_modified] || Time.now.utc
+        end
+
         # Return all available metadata.
         def metadata
           returning @metadata do |h|
@@ -157,6 +162,7 @@ module Hapgood # :nodoc:
             h[:filename] = filename if filename
             h[:digest] = digest if digest
             h[:size] = size if size
+            h[:last_modified] = last_modified if last_modified
           end
         end
 
