@@ -15,7 +15,7 @@ end
 desc 'Generate documentation for the attach plugin.'
 Rake::RDocTask.new(:rdoc) do |rdoc|
   rdoc.rdoc_dir = 'rdoc'
-  rdoc.title    = 'ActsAsAttachment'
+  rdoc.title    = 'Attach'
   rdoc.options << '--line-numbers --inline-source'
   rdoc.rdoc_files.include('README')
   rdoc.rdoc_files.include('lib/**/*.rb')
