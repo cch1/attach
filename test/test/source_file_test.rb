@@ -57,27 +57,6 @@ class SourceFileTest < ActiveSupport::TestCase
     assert !File.readable?(path)
   end
 
-  uses_mocha "mock Rails.public_path" do
-    def test_public_path_available
-      Rails.stubs(:public_path).returns(File.join(Attachment::FILE_STORE, '..'))
-      path = File.join(Attachment::FILE_STORE, 'rails.png')
-      uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
-      s = Hapgood::Attach::Sources::Base.reload(uri)
-      assert_not_nil s.public_uri
-      assert Pathname.new(s.public_uri.path).absolute?
-      assert Pathname.new(Rails.public_path).join(s.public_uri.to_s[1..-1]).exist?
-    end
-
-    def test_public_path_unavailable
-      hidden_public = File.join(Rails.public_path, 'images')
-      Rails.stubs(:public_path).returns(hidden_public)
-      path = File.join(Attachment::FILE_STORE, 'rails.png')
-      uri = ::URI.parse("file://localhost").merge(::URI.parse(path))
-      s = Hapgood::Attach::Sources::Base.reload(uri)
-      assert_nil s.public_uri
-    end
-  end
-
   def test_delete_with_missing_data
     uri = ::URI.parse("file:/something_missing")
     s = Hapgood::Attach::Sources::File.new(uri, {})

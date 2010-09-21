@@ -54,14 +54,6 @@ module Hapgood # :nodoc:
         end
 
         # =Metadata=
-        # Return ::URI where this attachment is available via http
-        def public_uri
-          pp = Pathname(uri.path).realpath.relative_path_from(Pathname.new(Rails.public_path).realpath)
-          pp.to_s.match(/\.\./) ? nil : URI.parse("/" + pp)
-        rescue ArgumentError
-          nil # no public path exits
-        end
-
         # Returns a file name suitable for this source when saved in a persistent file.
         # This is a fallback as the basename can be cryptic in many case.
         def filename
