@@ -43,7 +43,7 @@ class Geometry
     str << 'x' if (@width > 0 || @height > 0)
     str << "%g" % @height if @height
     str << "%+d%+d" % [@x, @y] if (@x != 0 || @y != 0)
-    str << FLAGS[@flag]
+    str << FLAGS[@flag].to_s
   end
   
   # attempts to get new dimensions for the current geometry string given these old dimensions.
