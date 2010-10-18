@@ -11,7 +11,9 @@ module Hapgood # :nodoc:
         attr_reader :uri
 
         def self.load(file, metadata = {})
-          uri = URI.parse('file://localhost/').merge(::File.expand_path(file.path))
+          pathname = Pathname.new(file.path)
+          path = URI.encode(pathname.realpath.to_s)
+          uri = URI.parse('file://localhost/').merge(path)
           self.new(uri, metadata)
         end
 
@@ -96,7 +98,7 @@ module Hapgood # :nodoc:
 
         private
         def pathname
-          @pathname ||= Pathname.new(uri.path)
+          @pathname ||= Pathname.new(URI.decode(uri.path))
         end
 
         def file

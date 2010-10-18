@@ -3,7 +3,8 @@ module Hapgood # :nodoc:
     module Sources
       class LocalAsset < Hapgood::Attach::Sources::File
         def self.load(pathname, metadata = {})
-          uri = URI.parse(pathname.realpath.to_s)
+          path = URI.encode(pathname.realpath.to_s)
+          uri = URI.parse(path)
           self.new(uri, metadata)
         end
 
