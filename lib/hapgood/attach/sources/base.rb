@@ -1,5 +1,3 @@
-require 'hapgood/attach/sources/rmagick'
-
 module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources

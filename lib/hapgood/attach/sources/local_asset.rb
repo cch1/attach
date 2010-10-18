@@ -1,5 +1,3 @@
-require 'hapgood/attach/sources/file'
-
 module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources

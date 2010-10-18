@@ -1,5 +1,4 @@
 require 'fileutils'
-require 'hapgood/attach/sources/io'
 
 module Hapgood # :nodoc:
   module Attach # :nodoc:
