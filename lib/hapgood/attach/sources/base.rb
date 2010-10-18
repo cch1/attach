@@ -95,6 +95,14 @@ module Hapgood # :nodoc:
           @metadata = m || {} # Store primer metadata
         end
 
+        def store(uri)
+          self.class.store(self, uri)
+        end
+
+        def process(transform)
+          self.class.process(self, transform)
+        end
+
         def valid?
           error.nil?
         end
