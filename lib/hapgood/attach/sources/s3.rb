@@ -6,6 +6,10 @@ module Hapgood # :nodoc:
       # Methods for duplexed Amazon S3 sources/sinks.
       class S3 < Hapgood::Attach::Sources::Base
         class S3Object < AWS::S3::S3Object;end
+        class << self
+          attr_accessor :url_lifetime
+        end
+        self.url_lifetime = 1.hour
 
         attr_reader :uri
 
@@ -58,7 +62,7 @@ module Hapgood # :nodoc:
         # Return ::URI where this attachment is available via http
         # Note that this method returns a different URL everytime it is called!
         def public_uri
-          URI.parse(s3obj.url)
+          URI.parse(s3obj.url(:expires_in => self.class.url_lifetime))
         end
 
         # Returns a file name suitable for this source when saved in a persistent file.
