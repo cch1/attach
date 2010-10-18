@@ -5,10 +5,6 @@ module Hapgood # :nodoc:
     module Sources
       # Methods for attachments modified by RMagick
       class Rmagick < Hapgood::Attach::Sources::Base
-        StandardImageGeometry = { :thumbnail => ::Magick::Geometry.from_s("128x128"),
-                                  :vignette => ::Magick::Geometry.from_s('256x256'),
-                                  :proof => ::Magick::Geometry.from_s('512x512'),
-                                  :max => ::Magick::Geometry.from_s('2097152@')} # 2 Megapixels
         def initialize(source)
           super
           @source = source

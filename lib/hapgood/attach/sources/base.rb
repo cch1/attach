@@ -15,7 +15,7 @@ module Hapgood # :nodoc:
         class_inheritable_accessor :tempfile_path, :instance_writer => false
         write_inheritable_attribute(:tempfile_path, File.join(RAILS_ROOT, 'tmp', 'attach'))
 
-        AvailableImageProcessing = Sources::Rmagick::StandardImageGeometry.keys
+        AvailableImageProcessing = Hapgood::Attach::StandardImageGeometry.keys
 
         attr_reader :error, :data
 
@@ -62,7 +62,7 @@ module Hapgood # :nodoc:
             when :icon then Sources::LocalAsset.load(icon_path(source.mime_type))
 #              when :thumbshot then Source::Thumbshooter.new(source).process()
 #              when :sample then Source::MPEGSampler.new(source).process()
-            when *Sources::Rmagick::StandardImageGeometry.keys
+            when *AvailableImageProcessing
               returning(Sources::Rmagick.new(source)) {|s| s.process(transform) }
             when :info
               case source.mime_type.to_sym
