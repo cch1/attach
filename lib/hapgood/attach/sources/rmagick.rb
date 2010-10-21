@@ -1,3 +1,4 @@
+require 'hapgood/attach/sources/base'
 require 'RMagick' # The gem is rmagick, the library is RMagick and the namespace is Magick
 
 module Hapgood # :nodoc:

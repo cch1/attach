@@ -1,3 +1,5 @@
+require 'hapgood/attach/sources'
+
 module Hapgood # :nodoc:
   module Attach # :nodoc:
     @@default_processors = %w(ImageScience Rmagick MiniMagick)

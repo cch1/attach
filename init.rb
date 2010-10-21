@@ -6,6 +6,7 @@ config.gem 'aws-s3', :version => '>=0.6.2', :lib => 'aws/s3'
 
 require 'tempfile'
 require 'geometry'
+require 'hapgood/attach'
 
 Tempfile.class_eval do
   # overwrite so tempfiles use the extension of the basename.  important for rmagick and image science
