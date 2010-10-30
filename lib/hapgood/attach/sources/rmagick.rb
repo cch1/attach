@@ -92,6 +92,7 @@ module Hapgood # :nodoc:
           @uri = nil # Once transformed, all external sources are invalid.
           @blob = nil # Once transformed, we need to reset the data.  Now the getter can lazily load the blob.
           @persistent = false
+          self
         end
 
         private

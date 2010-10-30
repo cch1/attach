@@ -104,7 +104,6 @@ module Hapgood # :nodoc:
         def change_image(&block)
           is = self.is_a?(Sources::Rmagick) ? self : Sources::Rmagick.new(self)
           is.change_image(&block)
-          is
         end
 
         def valid?
