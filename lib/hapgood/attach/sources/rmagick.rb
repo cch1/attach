@@ -16,13 +16,11 @@ module Hapgood # :nodoc:
 
         # Process this source with the given transformation, which must be a Geometry object.
         def process(transform)
-          t = StandardImageGeometry[transform.to_sym]
-          raise "Don't know how to do the #{transform} transformation" unless t
-          image.change_geometry(t) { |cols, rows, image| image.resize!(cols, rows) }
+          raise "Don't know how to do the #{transform} transformation" unless gstring = StandardImageGeometry[transform.to_sym]
+          change_image do |img|
+            img.change_geometry(gstring) { |cols, rows, image| image.resize!(cols, rows) }
+          end
           @aspect = transform.to_s
-          @uri = nil # Once transformed, all external sources are invalid.
-          @blob = nil # Once transformed, we need to reset the data.  Now the getter can lazily load the blob.
-          @persistent = false
           self
         end
 
@@ -39,7 +37,11 @@ module Hapgood # :nodoc:
         # =Metadata=
         # Gets a filename suitable for this attachment.
         def filename
-          adjusted_filename_for(@source.filename, @aspect)
+          pn = Pathname.new(@source.filename)
+          pn.basename(pn.extname).to_s.tap do |s|
+            s << "_" << @aspect unless @aspect.nil?
+            s << "." << mime_type.to_sym.to_s
+          end
         end
 
         def uri
@@ -83,17 +85,16 @@ module Hapgood # :nodoc:
           @image ||= ::Magick::Image.read(@source.tempfile.path).first
         end
 
-        private
-        # Adjust filename for being a thumbnail:  'foo.jpg' becomes 'foo_thumbnail.jpg'
-        def adjusted_filename_for(filename, aspect = nil)
-          return filename if aspect.blank?
-          ext = nil
-          basename = filename.gsub /\.\w+$/ do |s|
-            ext = s; ''
-          end
-          "#{basename}_#{aspect}#{ext}"
+        # Change the image within the block
+        def change_image(&block)
+          yield image
+          @tempfile = nil
+          @uri = nil # Once transformed, all external sources are invalid.
+          @blob = nil # Once transformed, we need to reset the data.  Now the getter can lazily load the blob.
+          @persistent = false
         end
 
+        private
         # Extract useful information from (ExiF | IPTC) header, if possible.
         def exif_data
           @exif_data ||= returning Hash.new do |data|
