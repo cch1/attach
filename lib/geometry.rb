@@ -3,11 +3,7 @@
 # Used so I can use spiffy RMagick geometry strings with ImageScience
 class Geometry
   FLAGS = {:percent => '%', :< => '<', :> => '>', :area => '@', :aspect => '!'}
-  RFLAGS = { '%' => :percent,
-             '!' => :aspect,
-             '<' => :>,
-             '>' => :<,
-             '@' => :area }
+  RFLAGS = FLAGS.invert
 
   attr_accessor :width, :height, :x, :y, :flag
 
