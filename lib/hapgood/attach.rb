@@ -184,7 +184,7 @@ module Hapgood # :nodoc:
       def source=(src)
         raise "Source should be an instance of Attach::Sources::Base or its subclasses." unless src.kind_of?(Sources::Base)
         raise "Source is not valid." unless src.valid?
-        raise "Previous source should have been destroyed" if @source && (@source.persistent? && !@source.readonly? && (aspect.nil? || @source == parent.source))
+        destroy_source if @source && (@source.persistent? && !@source.readonly? && (aspect.nil? || @source == parent.source))
         self.metadata = src.metadata.reject{|k,v| respond_to?("#{k}=")}
         self.attributes = src.metadata.reject{|k,v| !respond_to?("#{k}=")}
         @source = src
