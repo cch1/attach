@@ -180,7 +180,7 @@ module Hapgood # :nodoc:
         @source ||= uri && Sources::Base.reload(uri, stored_metadata)
       end
 
-      # Set the source.
+      # Set the source.  Note that the current source *will be destroyed* where persisted and not read-only.
       def source=(src)
         raise "Source should be an instance of Attach::Sources::Base or its subclasses." unless src.kind_of?(Sources::Base)
         raise "Source is not valid." unless src.valid?
@@ -192,14 +192,12 @@ module Hapgood # :nodoc:
       end
 
       # Allows you to work with a processed representation (RMagick, ImageScience, etc) of the attachment in a block.
-      #
-      #   @attachment.with_image do |img|
-      #     self.data = img.thumbnail(100, 100).to_blob
+      # The source is modified to reflect modifications to the image.
+      #   @attachment.change_image do |img|
+      #     img.thumbnail(100, 100)
       #   end
-      #
-      def with_image(&block)
-        self.source = source.process(:identity)
-        yield source.image
+      def change_image(&block)
+        self.source = source.change_image(&block)
       end
 
       # Define the set of aspects to be created for this attachment.  Aspects can be defined in several ways:
