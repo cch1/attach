@@ -101,6 +101,12 @@ module Hapgood # :nodoc:
           self.class.process(self, transform)
         end
 
+        def change_image(&block)
+          is = self.is_a?(Sources::Rmagick) ? self : Sources::Rmagick.new(self)
+          is.change_image(&block)
+          is
+        end
+
         def valid?
           error.nil?
         end
