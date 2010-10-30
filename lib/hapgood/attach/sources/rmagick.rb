@@ -16,9 +16,9 @@ module Hapgood # :nodoc:
 
         # Process this source with the given transformation, which must be a Geometry object.
         def process(transform)
-          raise "Don't know how to do the #{transform} transformation" unless gstring = StandardImageGeometry[transform.to_sym]
+          raise "Don't know how to do the #{transform} transformation" unless geometry = StandardImageGeometry[transform.to_sym]
           change_image do |img|
-            img.change_geometry(gstring) { |cols, rows, image| image.resize!(cols, rows) }
+            img.change_geometry(geometry) { |cols, rows, image| image.resize!(cols, rows) }
           end
           @aspect = transform.to_s
           self

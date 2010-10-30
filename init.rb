@@ -16,9 +16,9 @@ Tempfile.class_eval do
   end
 end
 
-Hapgood::Attach::StandardImageGeometry = { :thumbnail => ::Geometry.from_s("128x128"),
-                                  :vignette => ::Geometry.from_s('256x256'),
-                                  :proof => ::Geometry.from_s('512x512'),
+Hapgood::Attach::StandardImageGeometry = { :thumbnail => ::Geometry.from_s("128x128>"),
+                                  :vignette => ::Geometry.from_s('256x256>'),
+                                  :proof => ::Geometry.from_s('512x512>'),
                                   :max => ::Geometry.from_s('2097152@')} # 2 Megapixels
 
 ActiveRecord::Base.send(:extend, Hapgood::Attach::ActMethods)
