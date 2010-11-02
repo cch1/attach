@@ -1,6 +1,9 @@
 # Be sure to restart your server when you modify this file.
 
 # Add new mime types for use in respond_to blocks:
+# This Mime type is included to ensure at least one is unprocessable by the image processor
+Mime::Type.register 'application/octet-stream', :bin, %w(application/binary)
+
 # Mime::Type.register "text/richtext", :rtf
 # Mime::Type.register_alias "text/html", :iphone
 Mime::Type.register 'application/xrds+xml', :xrds

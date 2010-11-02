@@ -105,3 +105,13 @@ s3:
   metadata: "<%= {:time => DateTime.parse('Mon, 16 Nov 1998 11:39:37 +0000')}.to_yaml %>"
   description: ~
   parent: ~
+unknown:
+  uri: <%= db_uri(Fixtures.identify(:unknown), nil, :bin) %>
+  content_type: application/octet-stream
+  digest: <%= Digest::MD5.digest(" ") %>
+  size: 1
+  aspect: ~
+  filename: SecretStuff.bin
+  metadata: ~
+  description: A file whose format you don't know
+  parent: ~

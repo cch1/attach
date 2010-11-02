@@ -55,7 +55,7 @@ module Hapgood # :nodoc:
             m.belongs_to :parent, :class_name => base_class.to_s
           end
 
-          delegate :blob, :public_uri, :to => :source
+          delegate :blob, :public_uri, :processable?, :to => :source
 
           before_validation :process!
           before_validation :schedule_default_aspects, :unless => :aspect

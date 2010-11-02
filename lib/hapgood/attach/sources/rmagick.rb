@@ -6,6 +6,12 @@ module Hapgood # :nodoc:
     module Sources
       # Methods for attachments modified by RMagick
       class Rmagick < Hapgood::Attach::Sources::Base
+        PROCESSABLE_IMAGE_EXTENSIONS = ::Magick.formats.keys.map{|ext| ext.downcase.to_sym}
+
+        def self.processable?(mime_type)
+          PROCESSABLE_IMAGE_EXTENSIONS.include?(mime_type.to_sym)
+        end
+
         def initialize(source)
           super
           @source = source

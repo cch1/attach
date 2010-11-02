@@ -14,3 +14,5 @@ two:
   blob: <%= fixture_data('AlexOnBMW#4.jpg') %>
 sss:
   blob: <%= fixture_data('SperrySlantStar.bmp') %>
+unknown:
+  blob: " "
