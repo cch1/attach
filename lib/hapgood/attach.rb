@@ -2,13 +2,8 @@ require 'hapgood/attach/sources'
 
 module Hapgood # :nodoc:
   module Attach # :nodoc:
-    @@default_processors = %w(ImageScience Rmagick MiniMagick)
     @@image_content_types = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png', 'image/jpg', 'image/bmp']
-    @@program_content_types = ['text/html']
-    @@icon_content_types = @@program_content_types + ['application/xls']
-    @@content_types = @@image_content_types + @@icon_content_types
-    mattr_reader :content_types, :image_content_types, :icon_content_types, :program_content_types
-    mattr_reader :default_processors
+    mattr_reader :image_content_types
 
     class AspectError < StandardError;  end
     class AttachmentError < StandardError; end
@@ -86,10 +81,7 @@ module Hapgood # :nodoc:
         end
       end
 
-      delegate :content_types, :to => Hapgood::Attach
       delegate :image_content_types, :to => Hapgood::Attach
-      delegate :icon_content_types, :to => Hapgood::Attach
-      delegate :program_content_types, :to => Hapgood::Attach
 
       # Performs common validations for attachment models.
       def validates_as_attachment
