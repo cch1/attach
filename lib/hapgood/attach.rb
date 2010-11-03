@@ -109,11 +109,6 @@ module Hapgood # :nodoc:
         !(source.kind_of?(Sources::Http) && !store)
       end
 
-      # Returns the width/height in a suitable format for the image_tag helper: (100x100)
-      def image_size
-        [metadata[:width].to_s, metadata[:height].to_s] * 'x' if metadata && metadata[:width] && metadata[:height]
-      end
-
       # Getter for file virtual attribute for consistency with setter.  Useful in case this field is used in a form.
       def file() nil; end
 
