@@ -7,27 +7,20 @@ class Attachment < ActiveRecord::Base
 
   attr_protected([:mime_type, :size, :filename, :digest])
 
-  fssp = Proc.new {|i, a, e| "file://localhost#{::File.join(FILE_STORE, [[i,a].compact.join('_'), e].join('.'))}"}
-  s3sp = Proc.new {|i, a, e| "s3:/#{::File.join(S3_BUCKET, [[i,a].compact.join('_'), e].join('.'))}"}
-  dbsp = Proc.new {|i, a, e| "db:/#{i}"}
-  mock = Proc.new {|i, a, e| "memory:/#{[[i,a].compact.join('_'), e].join('.')}"}
+  fssp = Proc.new {|i, e| "file://localhost#{::File.join(FILE_STORE, [i, e].join('.'))}"}
+  s3sp = Proc.new {|i, e| "s3:/#{::File.join(S3_BUCKET, [i, e].join('.'))}"}
+  dbsp = Proc.new {|i, e| "db:/#{i}"}
+  mock = Proc.new {|i, e| "memory:/#{[i, e].join('.')}"}
   has_attachment(:size => 0.byte..15.megabytes, :store => mock)
 
   validates_as_attachment
 
   def to_s
-    returning "" do |s|
-      s << (self[:description] || self[:filename] || self[:uri] || 'Attachment')
-      s << " [#{self[:aspect]}]" if self[:aspect]
-    end
+    self[:description] || self[:filename] || self[:uri] || 'Attachment'
   end
 
   before_save_attachment do |a|
     a.description ||= "Default Attachment Description"
-  end
-
-  before_save_aspect do |a|
-    a.description ||= "Default Aspect Description"
   end
 
   # Return a unique id used to tag this attachment's data.

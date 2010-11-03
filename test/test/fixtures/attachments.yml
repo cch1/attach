@@ -30,88 +30,62 @@ one:
   content_type: image/png
   digest: <%= digest('plus.png') %>
   size: <%= size('plus.png') %>
-  aspect: ~
   filename: plus.png
   metadata: ~
   description: My Description
-  parent: ~
-one_thumbnail:
-  uri: <%= file_uri('plus', 'thumbnail', :png) %>
-  content_type: image/png
-  digest: <%= digest('plus_thumbnail.png') %>
-  size: <%= size('plus_thumbnail.png') %>
-  aspect: thumbnail
-  filename: MyString
-  metadata: ~
-  description: ~
-  parent: one
 two:
   uri: <%= file_uri('rails', nil, :png) %>
   content_type: image/png
   digest: <%= digest('rails.png') %>
   size: <%= size('rails.png') %>
-  aspect: ~
   filename: MyString
   metadata: "<%= {:time => DateTime.parse('Mon, 16 Nov 1998 11:39:37 +0000')}.to_yaml %>"
   description: ~
-  parent: ~
 sss:
   uri: <%= file_uri('SperrySlantStar', nil, :bmp) %>
   content_type: image/bmp
   digest: <%= digest('SperrySlantStar.bmp') %>
   size: <%= size('SperrySlantStar.bmp') %>
-  aspect: ~
   filename: SperrySlantStar.bmp
   metadata: ~
   description: ~
-  parent: ~
 remote:
   uri: http://cho.hapgoods.com/icons/powered_by_fedora.png
   content_type: image/png
   digest: ~
   size: ~
-  aspect: ~
   filename: powered_by_fedora.png
   metadata: ~
   description: ~
-  parent: ~
 missing:
   uri: <%= file_uri('xrails', nil, :png) %>
   content_type: image/png
   digest: <%= digest('rails.png') %>
   size: <%= size('rails.png') %>
-  aspect: ~
   filename: MyString
   metadata: "<%= {:time => DateTime.parse('Mon, 16 Nov 1998 11:39:37 +0000')}.to_yaml %>"
   description: ~
-  parent: ~
 db_sss:
   uri: <%= db_uri(Fixtures.identify(:sss), nil, :bmp) %>
   content_type: image/bmp
   digest: <%= digest('SperrySlantStar.bmp') %>
   size: <%= size('SperrySlantStar.bmp') %>
-  aspect: ~
   filename: SperrySlantStar.bmp
   metadata: ~
   description: ~
-  parent: ~
 s3:
   uri: <%= s3_uri('a03340f7-ba9e-4e19-854f-c8fa8e651574', nil, :png) %>
   content_type: image/png
   digest: <%= digest('rails.png') %>
   size: <%= size('rails.png') %>
-  aspect: ~
   filename: rails.png
   metadata: "<%= {:time => DateTime.parse('Mon, 16 Nov 1998 11:39:37 +0000')}.to_yaml %>"
   description: ~
-  parent: ~
 unknown:
   uri: <%= db_uri(Fixtures.identify(:unknown), nil, :bin) %>
   content_type: application/octet-stream
   digest: <%= Digest::MD5.digest(" ") %>
   size: 1
-  aspect: ~
   filename: SecretStuff.bin
   metadata: ~
   description: A file whose format you don't know
-  parent: ~

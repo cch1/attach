@@ -4,11 +4,9 @@ ActiveRecord::Schema.define(:version => Time.now.utc.strftime("%Y%m%d%H%M%S")) d
     t.string :content_type, :limit => 35
     t.binary :digest
     t.integer :size
-    t.string :aspect
     t.string :filename, :limit => 75
     t.string :metadata, :limit => 2048
     t.string :description, :limit => 128
-    t.integer :parent_id
     t.timestamps
   end
 

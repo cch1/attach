@@ -16,8 +16,6 @@ module Hapgood # :nodoc:
       # *  <tt>:max_size</tt> - Maximum size allowed.  1.megabyte is the default.
       # *  <tt>:size</tt> - Range of sizes allowed.  (1..1.megabyte) is the default.  This overrides the :min_size and :max_size options.
       # *  <tt>:resize</tt> - Used by RMagick to resize images.  Pass either an array of width/height, or a geometry string.
-      # *  <tt>:thumbnails</tt> - Specifies a set of thumbnails to generate.  This accepts a hash of thumb types (key) and resizing options or sources.
-      # *  <tt>:thumbnail_class</tt> - Set what class to use for thumbnails.  This attachment class is used by default.
       # *  <tt>:store</tt> - A proc that takes three arguments (id, aspect and extension) and returns a storage URI.
       #
       # Examples:
@@ -27,18 +25,14 @@ module Hapgood # :nodoc:
       #   has_attachment :content_type => ['application/pdf', 'application/msword', 'text/plain']
       #   has_attachment :content_type => :image, :resize_to => [50,50]
       #   has_attachment :content_type => ['application/pdf', :image], :resize_to => 'x50'
-      #   has_attachment :_aspects => { :thumbnail => [50, 50] }
       def has_attachment(options = {})
         # this allows you to redefine the acts' options for each subclass, however
         options[:min_size]         ||= 1
         options[:max_size]         ||= 1.megabyte
         options[:size]             ||= (options[:min_size]..options[:max_size])
-        options[:_aspects]         ||= []
         options[:s3_access]        ||= :public_read
         options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Hapgood::Attach.image_content_types : t }.flatten unless options[:content_type].nil?
         options[:store]            ||= Proc.new {|i, a, e| "file://localhost#{::File.join(RAILS_ROOT, 'public', 'attachments', [[i,a].compact.join('_'), e].join('.'))}"}
-
-        raise ArgumentError, ":The aspects option should be an array: e.g. :aspects => [:thumbnail, :proof]" unless options[:_aspects].is_a?(Array)
 
         # doing these shenanigans so that #attachment_options is available to processors and backends
         class_inheritable_accessor :attachment_options
@@ -50,18 +44,11 @@ module Hapgood # :nodoc:
           attr_accessor :store  # indicates whether or not to store attachment data.  Set to false to not store data and instead use a remote reference
           attr_writer :processing # Queue of transformations to apply to the attachment.
 
-          with_options :foreign_key => 'parent_id' do |m|
-            m.has_many   :aspects, :class_name => base_class.to_s, :dependent => :destroy, :extend => AspectsAssociation
-            m.belongs_to :parent, :class_name => base_class.to_s
-          end
-
           delegate :blob, :public_uri, :processable?, :to => :source
 
           before_validation :process!
-          before_validation :schedule_default_aspects, :unless => :aspect
           before_save :save_source
           before_save :evaluate_custom_callbacks
-          after_save :create_aspects
           after_destroy :destroy_source
           extend  ClassMethods
           include InstanceMethods
@@ -72,9 +59,6 @@ module Hapgood # :nodoc:
     module ClassMethods
       def self.extended(base)
         unless defined?(::ActiveSupport::Callbacks)
-          def before_save_aspect(&block)
-            write_inheritable_array(:before_save_aspect, [block])
-          end
           def before_save_attachment(&block)
             write_inheritable_array(:before_save_attachment, [block])
           end
@@ -106,16 +90,12 @@ module Hapgood # :nodoc:
 
     module InstanceMethods
       def self.included( base )
-        base.define_callbacks *[:before_save_attachment, :before_save_aspect] if base.respond_to?(:define_callbacks)
+        base.define_callbacks *[:before_save_attachment] if base.respond_to?(:define_callbacks)
       end
 
       # Trigger appropriate custom callbacks.
       def evaluate_custom_callbacks
-        if aspect?
-          callback(:before_save_aspect)
-        else
-          callback(:before_save_attachment)
-        end
+        callback(:before_save_attachment)
       end
 
       # Checks whether the attachment's content type is an image content type
@@ -141,7 +121,6 @@ module Hapgood # :nodoc:
       def file=(upload)
         return unless upload
         destroy_source  # Discard any existing source
-        aspects.clear
         begin
           self.source = Sources::Base.load(upload, cgi_metadata(upload))
         rescue => e  # Can't do much here -we have to wait until the validation phase to resurrect/reconstitute errors
@@ -159,7 +138,6 @@ module Hapgood # :nodoc:
         @url = u
         return unless u
         destroy_source  # Discard any existing source
-        aspects.clear
         begin
           self.source = Sources::Base.load(::URI.parse(u))
         rescue => e  # Can't do much here -we have to wait until the validation phase to resurrect/reconstitute errors
@@ -176,7 +154,7 @@ module Hapgood # :nodoc:
       def source=(src)
         raise "Source should be an instance of Attach::Sources::Base or its subclasses." unless src.kind_of?(Sources::Base)
         raise "Source is not valid." unless src.valid?
-        destroy_source if @source && (@source.persistent? && !@source.readonly? && (aspect.nil? || @source == parent.source))
+        destroy_source if @source && (@source.persistent? && !@source.readonly?)
         self.metadata = src.metadata.reject{|k,v| respond_to?("#{k}=")}
         self.attributes = src.metadata.reject{|k,v| !respond_to?("#{k}=")}
         @source = src
@@ -190,25 +168,6 @@ module Hapgood # :nodoc:
       #   end
       def change_image(&block)
         self.source = source.change_image(&block)
-      end
-
-      # Define the set of aspects to be created for this attachment.  Aspects can be defined in several ways:
-      #   * a hash, with the aspect name as the key and a hash of attributes as the value
-      #   * an array of symbols, each of which represents a standard transformation process
-      # Note that an empty array will ensure no aspects are created.
-      def _aspects=(instructions)
-        raise "Can't make aspects of aspects" if parent
-        @_aspects = instructions
-      end
-
-      # Returns the hash of aspects to be built for this attachment.
-      def _aspects
-        @_aspects ||= {}
-      end
-
-      # Schedule the creation of the default aspects
-      def schedule_default_aspects
-        @_aspects ||= attachment_options[:_aspects] if @source_updated
       end
 
       # Return an instance of ::URI that points to the attachment's data source.
@@ -261,26 +220,9 @@ module Hapgood # :nodoc:
         true
       end
 
-      # Returns true if the original attachment or any of its aspects require data for processing (best guess) or storing.
-      # Manually defined _aspects (via attribute) are assumed to not require data for processing unless the store attribute is also set.
-      def data_required?
-        store || image? && _aspects.any? do |name, attributes|
-          attributes.nil? ? Sources::Base::AvailableImageProcessing.include?(name) : attributes[:store]
-        end
-      end
-
       # Returns the specific processing required for this Attachment instance
       def processing
         @processing ||= image? && (resize ? :max : :info)
-      end
-
-      # Create additional child attachments for each requested aspect.  Processing rules are
-      # converted to attributes as required and the queue is cleared when complete.
-      def create_aspects
-        _aspects.inject({}) { |m,(k,v)| m[k] = v || {:processing => k, :source => source}; m }.each do |name, attrs|
-          aspects.make(name, attrs)
-        end
-        _aspects.clear
       end
 
       # Store the attachment to the backend, if required, and trigger associated callbacks.
@@ -289,7 +231,7 @@ module Hapgood # :nodoc:
         raise "No source provided" unless source
         return unless @source_updated
         if store || !source.persistent?
-          storage_uri = self.class.storage_uri(uuid!, aspect, mime_type)
+          storage_uri = self.class.storage_uri(uuid!, nil, mime_type)
           logger.debug "Attach: SAVE SOURCE    #{self} (#{source} @ #{source.uri}) to #{storage_uri}\n"
           self.source = Sources::Base.store(source, storage_uri)
         end
@@ -316,16 +258,6 @@ module Hapgood # :nodoc:
       # Extract stored metadata from attributes to enrichen a purely binary source to the same level as a CGI-supplied source.
       def stored_metadata
         %w(filename mime_type).inject(Hash.new) {|hash, key| hash[key.to_sym] = self.send(key.to_sym);hash}
-      end
-    end
-
-    module AspectsAssociation
-      def make(name, attrs)
-        raise(AspectError.new("Can't create an aspect of an aspect")) unless proxy_owner.parent_id.nil?
-        logger.debug "Attach: MAKE ASPECT   #{proxy_owner}->#{name}\n"
-        with_exclusive_scope do
-          create!(attrs.merge({:aspect => name.to_s}))
-        end
       end
     end
   end
