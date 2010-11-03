@@ -182,12 +182,6 @@ class ModelTest < ActiveSupport::TestCase
     assert_no_match /example\/example/, p.to_s  # make sure bogus Mime::Type does not appear literally in path.
   end
 
-  def test_before_save_callback
-    a = Attachment.create(:file => fixture_file_upload('attachments/SperrySlantStar.bmp', 'image/bmp', :binary))
-    assert a.valid?, a.errors.full_messages.first
-    assert_equal "Default Attachment Description", a.description
-  end
-
   def test_source_metadata_is_assigned_to_attributes
     a = Attachment.new(:file => fixture_file_upload('attachments/ManagingAgileProjects.pdf', 'application/pdf', :binary))
     assert_equal 144866, a.size

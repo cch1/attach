@@ -19,10 +19,6 @@ class Attachment < ActiveRecord::Base
     self[:description] || self[:filename] || self[:uri] || 'Attachment'
   end
 
-  before_save_attachment do |a|
-    a.description ||= "Default Attachment Description"
-  end
-
   # Return a unique id used to tag this attachment's data.
   def uuid!
     @uuid ||= ::UUID.timestamp_create.to_s

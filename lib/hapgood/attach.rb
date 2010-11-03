@@ -48,7 +48,6 @@ module Hapgood # :nodoc:
 
           before_validation :process!
           before_save :save_source
-          before_save :evaluate_custom_callbacks
           after_destroy :destroy_source
           extend  ClassMethods
           include InstanceMethods
@@ -57,14 +56,6 @@ module Hapgood # :nodoc:
     end
 
     module ClassMethods
-      def self.extended(base)
-        unless defined?(::ActiveSupport::Callbacks)
-          def before_save_attachment(&block)
-            write_inheritable_array(:before_save_attachment, [block])
-          end
-        end
-      end
-
       delegate :image_content_types, :to => Hapgood::Attach
 
       # Performs common validations for attachment models.
@@ -89,15 +80,6 @@ module Hapgood # :nodoc:
     end
 
     module InstanceMethods
-      def self.included( base )
-        base.define_callbacks *[:before_save_attachment] if base.respond_to?(:define_callbacks)
-      end
-
-      # Trigger appropriate custom callbacks.
-      def evaluate_custom_callbacks
-        callback(:before_save_attachment)
-      end
-
       # Checks whether the attachment's content type is an image content type
       def image?
         self.class.image?(content_type)
@@ -220,7 +202,7 @@ module Hapgood # :nodoc:
         @processing ||= image? && (resize ? :max : :info)
       end
 
-      # Store the attachment to the backend, if required, and trigger associated callbacks.
+      # Store the attachment to the backend, if required.
       # Sources are saved to the location identified by the uri attribute if the store attribute is set.
       def save_source
         raise "No source provided" unless source
