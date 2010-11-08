@@ -12,21 +12,21 @@ def size(name)
   File.size(fn)
 end
 
-def file_uri(i, a, e)
-  "file://localhost#{::File.join(Attachment::FILE_STORE, [[i,a].compact.join('_'), e].join('.'))}"
+def file_uri(i, e)
+  "file://localhost#{::File.join(Attachment::FILE_STORE, [i,e].compact.join('.'))}"
 end
 
-def s3_uri(i, a, e)
-  "s3:/#{::File.join(Attachment::S3_BUCKET, [[i,a].compact.join('_'), e].join('.'))}"
+def s3_uri(i, e)
+  "s3:/#{::File.join(Attachment::S3_BUCKET, [i,e].compact.join('.'))}"
 end
 
-def db_uri(i, a, e)
+def db_uri(i, e)
   "db:/#{i}"
 end
 %>
 
 one:
-  uri: <%= file_uri('plus', nil, :png) %>
+  uri: <%= file_uri('plus', :png) %>
   content_type: image/png
   digest: <%= digest('plus.png') %>
   size: <%= size('plus.png') %>
@@ -34,7 +34,7 @@ one:
   metadata: ~
   description: My Description
 two:
-  uri: <%= file_uri('rails', nil, :png) %>
+  uri: <%= file_uri('rails', :png) %>
   content_type: image/png
   digest: <%= digest('rails.png') %>
   size: <%= size('rails.png') %>
@@ -42,7 +42,7 @@ two:
   metadata: "<%= {:time => DateTime.parse('Mon, 16 Nov 1998 11:39:37 +0000')}.to_yaml %>"
   description: ~
 sss:
-  uri: <%= file_uri('SperrySlantStar', nil, :bmp) %>
+  uri: <%= file_uri('SperrySlantStar', :bmp) %>
   content_type: image/bmp
   digest: <%= digest('SperrySlantStar.bmp') %>
   size: <%= size('SperrySlantStar.bmp') %>
@@ -58,7 +58,7 @@ remote:
   metadata: ~
   description: ~
 missing:
-  uri: <%= file_uri('xrails', nil, :png) %>
+  uri: <%= file_uri('xrails', :png) %>
   content_type: image/png
   digest: <%= digest('rails.png') %>
   size: <%= size('rails.png') %>
@@ -66,7 +66,7 @@ missing:
   metadata: "<%= {:time => DateTime.parse('Mon, 16 Nov 1998 11:39:37 +0000')}.to_yaml %>"
   description: ~
 db_sss:
-  uri: <%= db_uri(Fixtures.identify(:sss), nil, :bmp) %>
+  uri: <%= db_uri(Fixtures.identify(:sss), :bmp) %>
   content_type: image/bmp
   digest: <%= digest('SperrySlantStar.bmp') %>
   size: <%= size('SperrySlantStar.bmp') %>
@@ -74,7 +74,7 @@ db_sss:
   metadata: ~
   description: ~
 s3:
-  uri: <%= s3_uri('a03340f7-ba9e-4e19-854f-c8fa8e651574', nil, :png) %>
+  uri: <%= s3_uri('a03340f7-ba9e-4e19-854f-c8fa8e651574', :png) %>
   content_type: image/png
   digest: <%= digest('rails.png') %>
   size: <%= size('rails.png') %>
@@ -82,7 +82,7 @@ s3:
   metadata: "<%= {:time => DateTime.parse('Mon, 16 Nov 1998 11:39:37 +0000')}.to_yaml %>"
   description: ~
 unknown:
-  uri: <%= db_uri(Fixtures.identify(:unknown), nil, :bin) %>
+  uri: <%= db_uri(Fixtures.identify(:unknown), :bin) %>
   content_type: application/octet-stream
   digest: <%= Digest::MD5.digest(" ") %>
   size: 1

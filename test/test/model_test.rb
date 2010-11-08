@@ -182,6 +182,13 @@ class ModelTest < ActiveSupport::TestCase
     assert_no_match /example\/example/, p.to_s  # make sure bogus Mime::Type does not appear literally in path.
   end
 
+  def test_storage_uri_has_reasonable_file_extension
+    mt = Mime::Type.lookup_by_extension('pdf')
+    a = Attachment.create(:file => fixture_file_upload('attachments/ManagingAgileProjects.pdf', mt.to_s, :binary))
+    p = Pathname.new(a.uri.path)
+    assert_equal mt.to_sym.to_s, p.extname[1..-1]
+  end
+
   def test_source_metadata_is_assigned_to_attributes
     a = Attachment.new(:file => fixture_file_upload('attachments/ManagingAgileProjects.pdf', 'application/pdf', :binary))
     assert_equal 144866, a.size

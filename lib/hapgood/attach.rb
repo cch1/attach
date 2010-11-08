@@ -32,7 +32,7 @@ module Hapgood # :nodoc:
         options[:size]             ||= (options[:min_size]..options[:max_size])
         options[:s3_access]        ||= :public_read
         options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Hapgood::Attach.image_content_types : t }.flatten unless options[:content_type].nil?
-        options[:store]            ||= Proc.new {|i, a, e| "file://localhost#{::File.join(RAILS_ROOT, 'public', 'attachments', [[i,a].compact.join('_'), e].join('.'))}"}
+        options[:store]            ||= Proc.new {|i, e| "file://localhost#{::File.join(RAILS_ROOT, 'public', 'attachments', [i,e].compact.join('.'))}"}
 
         # doing these shenanigans so that #attachment_options is available to processors and backends
         class_inheritable_accessor :attachment_options
@@ -73,9 +73,9 @@ module Hapgood # :nodoc:
       end
 
       # Builds a URI where the attachment should be stored
-      def storage_uri(id, aspect, mt)
+      def storage_uri(id, mt)
         extension = mt.to_sym.to_s.gsub('/', '_') rescue nil
-        ::URI.parse(attachment_options[:store].call(id, aspect, extension))
+        ::URI.parse(attachment_options[:store].call(id, extension))
       end
     end
 
@@ -208,7 +208,7 @@ module Hapgood # :nodoc:
         raise "No source provided" unless source
         return unless @source_updated
         if store || !source.persistent?
-          storage_uri = self.class.storage_uri(uuid!, nil, mime_type)
+          storage_uri = self.class.storage_uri(uuid!, mime_type)
           logger.debug "Attach: SAVE SOURCE    #{self} (#{source} @ #{source.uri}) to #{storage_uri}\n"
           self.source = Sources::Base.store(source, storage_uri)
         end
