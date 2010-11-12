@@ -23,7 +23,7 @@ module Hapgood # :nodoc:
         # =Metadata=
         # Return ::URI where this attachment is available via http
         def public_uri
-          pp = Pathname(uri.path).realpath.relative_path_from(Pathname.new(Rails.public_path).realpath)
+          pp = pathname.realpath.relative_path_from(Pathname.new(Rails.public_path).realpath)
           pp.to_s.match(/\.\./) ? nil : URI.parse("/" + pp)
         end
 

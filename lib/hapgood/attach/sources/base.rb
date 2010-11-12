@@ -172,7 +172,13 @@ module Hapgood # :nodoc:
         end
 
         # =Data=
-        # Return an IO-compatible instance with source's data.
+        # This exposes an OS file, where available, to clients without necessarily imposing the overhead of a defensive copy to a Tempfile.
+        # The underlying file should be considered read-only.
+        def pathname
+        end
+
+        # Return an IO-compatible object linked to the source's data.
+        # It should be considered read-only.
         def io
           @io ||= StringIO.new(blob, 'r+b')
         end

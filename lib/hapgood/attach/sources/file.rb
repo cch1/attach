@@ -72,6 +72,10 @@ module Hapgood # :nodoc:
         end
 
         # =Data=
+        def pathname
+          @pathname ||= Pathname.new(URI.decode(uri.path))
+        end
+
         def blob
           io.rewind
           io.read
@@ -98,10 +102,6 @@ module Hapgood # :nodoc:
         end
 
         private
-        def pathname
-          @pathname ||= Pathname.new(URI.decode(uri.path))
-        end
-
         def file
           pathname.open
         rescue Errno::ENOENT => e
