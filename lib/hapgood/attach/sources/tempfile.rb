@@ -25,8 +25,8 @@ module Hapgood # :nodoc:
         end
 
         # =Data=
-        def tempfile
-          io
+        def pathname
+          @pathname ||= Pathname.new(@data.path)
         end
 
         # =State Transitions=
