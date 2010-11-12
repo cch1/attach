@@ -21,12 +21,4 @@ class SourceTest < ActiveSupport::TestCase
     assert s.metadata[:time].is_a?(Time)
     assert_equal Time.parse('Sat, 28 Nov 1998 11:39:37 -0500'), s.metadata[:time].to_time
   end
-
-  def test_process_with_icon
-    s = stubbed_source(:filename => 'empty.txt')
-    assert s = Hapgood::Attach::Sources::Base.process(s, :icon)
-    assert_kind_of Hapgood::Attach::Sources::LocalAsset, s
-    assert_equal 'image/png', s.mime_type.to_s
-    assert_match /(\/.*)+\/mime_type_icons.text_plain\.png/, s.uri.path
-  end
 end

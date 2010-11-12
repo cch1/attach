@@ -57,9 +57,6 @@ module Hapgood # :nodoc:
         def self.process(source, transform = :identity)
           transform = transform.to_sym
           case transform
-            when :icon then Sources::LocalAsset.load(icon_path(source.mime_type))
-#              when :thumbshot then Source::Thumbshooter.new(source).process()
-#              when :sample then Source::MPEGSampler.new(source).process()
             when *Hapgood::Attach::StandardImageGeometry.keys
               returning(Sources::Rmagick.new(source)) {|s| s.process(transform) }
             when :info
@@ -81,11 +78,6 @@ module Hapgood # :nodoc:
             else raise "Don't know how to store to #{uri}."
           end
           klass.store(source, uri)
-        end
-
-        def self.icon_path(mt)
-          name = mt.to_s.gsub('/', '_')
-          Pathname.new(ActionView::Helpers::AssetTagHelper::ASSETS_DIR).join('images', 'mime_type_icons', "#{name}.png")
         end
 
         def initialize(d = nil, m = nil)

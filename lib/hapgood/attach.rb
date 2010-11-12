@@ -40,7 +40,7 @@ module Hapgood # :nodoc:
 
         # only need to define these once on a class
         unless included_modules.include?(InstanceMethods)
-          attr_accessor :resize, :iconify
+          attr_accessor :resize
           attr_accessor :store  # indicates whether or not to store attachment data.  Set to false to not store data and instead use a remote reference
           attr_writer :processing # Queue of transformations to apply to the attachment.
 
