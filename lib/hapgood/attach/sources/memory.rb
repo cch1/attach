@@ -10,7 +10,7 @@ module Hapgood # :nodoc:
         @@_store = Hash.new
         attr_reader :uri
 
-        # Create a new S3 object at the given URI and store the given source in it.
+        # Create a new memory object at the given URI and store the given source in it.
         def self.store(source, uri)
           key = uri.path.split('/')[-1]
           raise "Target object already exists! (#{key}) " if _store.has_key?(key)

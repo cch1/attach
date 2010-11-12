@@ -183,12 +183,12 @@ module Hapgood # :nodoc:
           @io ||= StringIO.new(blob, 'r+b')
         end
 
-        # Return the source's data as a blob string
+        # Return a copy of the source's data as a blob string.
         def blob
           nil
         end
 
-        # Return a closed Tempfile of source's data.
+        # Return a copy of the source's data as a Tempfile.
         def tempfile
           returning(::Tempfile.new(filename, tempfile_path)) do |tmp|
             tmp.binmode
