@@ -88,7 +88,7 @@ module Hapgood # :nodoc:
         end
 
         def image
-          @image ||= ::Magick::Image.read(@source.tempfile.path).first
+          @image ||= ::Magick::Image.read(@source.tempfile.path + '[0]').first
         end
 
         # Change the image within the block
