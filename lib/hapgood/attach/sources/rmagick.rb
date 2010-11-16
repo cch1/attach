@@ -6,10 +6,18 @@ module Hapgood # :nodoc:
     module Sources
       # Methods for attachments modified by RMagick
       class Rmagick < Hapgood::Attach::Sources::Base
-        PROCESSABLE_IMAGE_EXTENSIONS = ::Magick.formats.keys.map{|ext| ext.downcase.to_sym}
+        # The ImageMagick format string that maps to the given Mime::Type
+        def self.format_for_mime_type(mt)
+          @format_for_mime_type ||= begin
+            # Unfortunately, the support mask returned by Magick.formats is unreliable -otherwise we would winnow with =~ /.r../
+            recognized_formats = ::Magick.formats.keys.select{|fmt| Mime::EXTENSION_LOOKUP.keys.include?(fmt.downcase)}
+            recognized_formats.inject({}){|m, fmt| m[Mime::EXTENSION_LOOKUP[fmt.downcase]] = fmt;m }
+          end
+          @format_for_mime_type[mt]
+        end
 
         def self.processable?(mime_type)
-          PROCESSABLE_IMAGE_EXTENSIONS.include?(mime_type.to_sym)
+          !!format_for_mime_type(mime_type)
         end
 
         def initialize(source)
@@ -88,7 +96,12 @@ module Hapgood # :nodoc:
         end
 
         def image
-          @image ||= ::Magick::Image.read(@source.tempfile.path + '[0]').first
+          @image ||= begin
+            format = self.class.format_for_mime_type(@source.mime_type)
+            read_spec = "#{@source.tempfile.path}[0]"
+            read_spec = "#{format}:" + read_spec if format
+            ::Magick::Image.read(read_spec).first
+          end
         end
 
         # Change the image within the block

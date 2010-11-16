@@ -1,3 +1,5 @@
+require 'tempfile'
+
 module Hapgood # :nodoc:
   module Attach # :nodoc:
     module Sources
