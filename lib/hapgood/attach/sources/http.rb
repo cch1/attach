@@ -30,14 +30,14 @@ module Hapgood # :nodoc:
           Net::HTTP.start(uri.host) do |http|
             response = http.send(method, uri.path)
             case response
-              when Net::HTTPSuccess
-                return response
+              when Net::HTTPSuccess then response
               when Net::HTTPRedirection
                 raise ArgumentError, "URL results in too many redirections." if count.zero?
-                return download(::URI.parse(response['location']), method, count-1)
+                download(::URI.parse(response['location']), method, count-1)
               else
-                raise ArgumentError, "Couldn't open URL (#{response.message})"
-              end
+                raise ArgumentError, "Couldn't open URL (#{response.message})" if method == :get
+                download(uri, :get)
+            end
           end
         end
 
