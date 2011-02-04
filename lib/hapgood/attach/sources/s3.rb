@@ -84,7 +84,7 @@ module Hapgood # :nodoc:
 
         # Returns a closed Tempfile of source's data.
         def tempfile
-          returning ::Tempfile.new(filename, tempfile_path) do |tmp|
+          ::Tempfile.new(filename, tempfile_path).tap do |tmp|
             tmp.write s3obj.value
             tmp.close
           end

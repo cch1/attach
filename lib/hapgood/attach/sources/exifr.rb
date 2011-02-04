@@ -40,7 +40,7 @@ module Hapgood # :nodoc:
         end
 
         def metadata
-          returning super do |h|
+          super().tap do |h|
             h.reverse_merge!(image.exif.to_hash) if image.exif?
             h[:height] = image.height if image.height
             h[:width] = image.width if image.width

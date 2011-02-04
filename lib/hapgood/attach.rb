@@ -226,7 +226,7 @@ module Hapgood # :nodoc:
 
       private
       def cgi_metadata(data)
-        returning(Hash.new) do |md|
+        Hash.new.tap do |md|
           md[:filename] = data.original_filename if data.respond_to?(:original_filename)
           md[:mime_type] = ::Mime::Type.lookup(data.content_type) if data.respond_to?(:content_type)
         end

@@ -60,7 +60,7 @@ module Hapgood # :nodoc:
           transform = transform.to_sym
           case transform
             when *Hapgood::Attach::StandardImageGeometry.keys
-              returning(Sources::Rmagick.new(source)) {|s| s.process(transform) }
+              Sources::Rmagick.new(source).tap {|s| s.process(transform) }
             when :info
               case source.mime_type.to_sym
                 when :jpg, :tiff then Sources::EXIFR.new(source).process(transform)
@@ -163,7 +163,7 @@ module Hapgood # :nodoc:
 
         # Return all available metadata.
         def metadata
-          returning @metadata do |h|
+          @metadata.tap do |h|
             #  This represents the minimal set of attribute methods that should be available in every subclass.
             h[:mime_type] = mime_type if mime_type
             h[:filename] = filename if filename
@@ -192,7 +192,7 @@ module Hapgood # :nodoc:
 
         # Return a copy of the source's data as a Tempfile.
         def tempfile
-          returning(::Tempfile.new(filename, tempfile_path)) do |tmp|
+          ::Tempfile.new(filename, tempfile_path).tap do |tmp|
             tmp.binmode
             tmp.write(blob)
             tmp.close

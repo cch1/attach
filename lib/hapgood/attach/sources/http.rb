@@ -28,8 +28,7 @@ module Hapgood # :nodoc:
         # Download from a URI
         def self.download(uri, method = :head, count = 5)
           Net::HTTP.start(uri.host) do |http|
-            response = http.send(method, uri.path)
-            case response
+            case response = http.send(method, uri.path)
               when Net::HTTPSuccess then response
               when Net::HTTPRedirection
                 raise ArgumentError, "URL results in too many redirections." if count.zero?

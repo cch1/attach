@@ -75,7 +75,7 @@ module Hapgood # :nodoc:
         end
 
         def metadata
-          returning super.merge(exif_data) do |h|
+          super.merge(exif_data).tap do |h|
             h[:height] = image.rows
             h[:width] = image.columns
           end
@@ -89,7 +89,7 @@ module Hapgood # :nodoc:
 
         # Return the source's data as a tempfile.
         def tempfile
-          @tempfile ||= returning(::Tempfile.new(filename, tempfile_path)) do |t|
+          @tempfile ||= ::Tempfile.new(filename, tempfile_path).tap do |t|
             t.close
             image.write(t.path)
           end
@@ -117,7 +117,7 @@ module Hapgood # :nodoc:
         private
         # Extract useful information from (ExiF | IPTC) header, if possible.
         def exif_data
-          @exif_data ||= returning Hash.new do |data|
+          @exif_data ||= Hash.new.tap do |data|
             begin
               if (timestamp = (image.get_exif_by_entry('DateTime').first.last || image.get_exif_by_entry('DateTimeOriginal').first.last))
                 # Replace colons and forward slashes in the first (date) portion of the string with dashes.
