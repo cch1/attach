@@ -1,6 +1,4 @@
 production: &defaults
-  s3:
-    :access_key_id: AKIAJAB7ETCUXOW3OWKA
 development:
   <<: *defaults
 test:
